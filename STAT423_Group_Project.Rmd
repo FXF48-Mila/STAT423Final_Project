@@ -21,32 +21,29 @@ head(data)
 skimr::skim(data)
 ```
 
+```{r data_encoding}
+# Encoding categorical data
+data$sex <- as.numeric(as.factor(data$sex))
+data$smoker <- as.numeric(as.factor(data$smoker))
+data$region <- as.numeric(as.factor(data$region))
+```
+
 ```{r smoker}
 # check reasons for innormal
 # irrelated to smoke
-data <- read.csv("Health_insurance.csv")
-data_smoker <- data %>% filter(smoker == "yes")
-data_smoker$smoker <- as.numeric(as.factor(data_smoker$smoker))
+data_smoker <- data %>% filter(smoker == 2)
 
 model <- lm(charges ~ ., data = data_smoker)
 
 qqnorm(residuals(model))
 qqline(residuals(model), col="red")
 
-data_non_smoker <- data %>% filter(smoker == "no")
-data_non_smoker$smoker <- as.numeric(as.factor(data_non_smoker$smoker))
+data_non_smoker <- data %>% filter(smoker == 1)
 
 model <- lm(charges ~ ., data = data_non_smoker)
 
 qqnorm(residuals(model))
 qqline(residuals(model), col="red")
-```
-
-```{r data_encoding}
-# Encoding categorical data
-data$sex <- as.numeric(as.factor(data$sex))
-data$smoker <- as.numeric(as.factor(data$smoker))
-data$region <- as.numeric(as.factor(data$region))
 ```
 
 ```{r bootstrap, warning=FALSE}
