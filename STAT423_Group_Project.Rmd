@@ -37,18 +37,31 @@ title(main = "95% CI for the Box-Cox transform.")
 data$charges <- log(data$charges)
 ```
 
-```{r}
-plot(data)
+```{r data_split}
+set.seed(423)
+
+df_shuffled <- data[sample(nrow(data)), ]
+
+n_total <- nrow(df_shuffled)
+n_train <- floor(0.8 * n_total)
+
+train_set <- df_shuffled[1:n_train, ]
+test_set <- df_shuffled[(n_train + 1):n_total, ]
 ```
+
+```{r}
+plot(train_set)
+```
+
 ```{r data_check_og}
 par(mfrow=c(2,2))
 
-hist(data$age, main="Age Distribution", xlab="Age")
-hist(data$bmi, main="BMI Distribution", xlab="BMI")
-hist(data$charges, main="Charges Distribution", xlab="Charges")
+hist(train_set$age, main="Age Distribution", xlab="Age")
+hist(train_set$bmi, main="BMI Distribution", xlab="BMI")
+hist(train_set$charges, main="Charges Distribution", xlab="Charges")
 ```
 ```{r lr_fit_initial}
-fitfull <- lm(charges ~ ., data = data)
+fitfull <- lm(charges ~ ., data = train_set)
 summary(fitfull)
 ```
 ```{r detailed_residual_plot}
@@ -60,7 +73,7 @@ plot(fitfull,which=3)
 plot(fitfull,which=4)
 ```
 ```{r}
-datasmoker <- data %>% filter(smoker == "yes")
+datasmoker <- train_set %>% filter(smoker == "yes")
 fit12 <- lm(charges ~ age+sex+bmi+children+region, data = datasmoker)
 summary(fit12)
 par(mfrow=c(2, 2))
@@ -71,7 +84,7 @@ plot(fit12,which=4)
 ```
 
 ```{r}
-datanosmoker <- data %>% filter(smoker == "no")
+datanosmoker <- train_set %>% filter(smoker == "no")
 fit13 <- lm(charges ~ age+sex+bmi+children+region, data = datanosmoker)
 summary(fit13)
 par(mfrow=c(2, 2))
