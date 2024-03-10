@@ -20,13 +20,71 @@ data <- read.csv("Health_insurance.csv")
 head(data)
 skimr::skim(data)
 ```
-
-```{r data_encoding}
-# Encoding categorical data
-data$sex <- as.numeric(as.factor(data$sex))
-data$smoker <- as.numeric(as.factor(data$smoker))
-data$region <- as.numeric(as.factor(data$region))
+```{r}
+data <- data %>%
+  mutate(children = ifelse(children > 0, "have child", "no child"))
+data$sex <- as.factor(data$sex)
+data$smoker <- as.factor(data$smoker)
+data$region <- as.factor(data$region)
 ```
+
+```{r box-cox_transform}
+# Box-Cox transformation
+bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Box-Cox transform.")
+
+# Log transformation
+data$charges <- log(data$charges)
+```
+
+```{r}
+plot(data)
+```
+```{r data_check_og}
+par(mfrow=c(2,2))
+
+hist(data$age, main="Age Distribution", xlab="Age")
+hist(data$bmi, main="BMI Distribution", xlab="BMI")
+hist(data$charges, main="Charges Distribution", xlab="Charges")
+```
+```{r lr_fit_initial}
+fitfull <- lm(charges ~ ., data = data)
+summary(fitfull)
+```
+```{r detailed_residual_plot}
+par(mfrow=c(2, 2))
+
+plot(fitfull,which=1)
+plot(fitfull,which=2)
+plot(fitfull,which=3)
+plot(fitfull,which=4)
+```
+```{r}
+datasmoker <- data %>% filter(smoker == "yes")
+fit12 <- lm(charges ~ age+sex+bmi+children+region, data = datasmoker)
+summary(fit12)
+par(mfrow=c(2, 2))
+plot(fit12,which=1)
+plot(fit12,which=2)
+plot(fit12,which=3)
+plot(fit12,which=4)
+```
+
+```{r}
+datanosmoker <- data %>% filter(smoker == "no")
+fit13 <- lm(charges ~ age+sex+bmi+children+region, data = datanosmoker)
+summary(fit13)
+par(mfrow=c(2, 2))
+plot(fit13,which=1)
+plot(fit13,which=2)
+plot(fit13,which=3)
+plot(fit13,which=4)
+```
+
+
+######################################################################################
+
+
 
 ```{r smoker}
 # check reasons for innormal
