@@ -16,3 +16,147 @@ library(faraway)
 data <- read.csv("Health_insurance.csv")
 ```
 
+```{r data_check}
+head(data)
+skimr::skim(data)
+```
+
+```{r data_encoding}
+# Encoding categorical data
+data$sex <- as.numeric(as.factor(data$sex))
+data$smoker <- as.numeric(as.factor(data$smoker))
+data$region <- as.numeric(as.factor(data$region))
+```
+
+```{r bootstrap, warning=FALSE}
+bootstrap_df <- function(data, n_bootstrap) {
+  bootstrap_results <- list()
+  
+  for (i in 1:n_bootstrap) {
+    sample_data <- data %>% sample_n(size = nrow(data), replace = TRUE)
+    bootstrap_results[[i]] <- summarise_all(sample_data, mean)
+  }
+  
+  do.call(rbind, bootstrap_results)
+}
+
+n_bootstrap <- 1000 # number of n
+
+bootstrap_results <- bootstrap_df(data, n_bootstrap)
+```
+
+```{r data_check_bootstrap}
+par(mfrow=c(2,2))
+
+hist(bootstrap_results$age, main="Age Distribution", xlab="Age")
+hist(bootstrap_results$bmi, main="BMI Distribution", xlab="BMI")
+hist(bootstrap_results$children, main="Children Distribution", xlab="Children")
+hist(bootstrap_results$charges, main="Charges Distribution", xlab="Charges")
+```
+
+```{r data_check_og}
+par(mfrow=c(2,2))
+
+hist(data$age, main="Age Distribution", xlab="Age")
+hist(data$bmi, main="BMI Distribution", xlab="BMI")
+hist(data$children, main="Children Distribution", xlab="Children")
+hist(data$charges, main="Charges Distribution", xlab="Charges")
+```
+
+```{r children_count}
+data %>%
+  group_by(children) %>%
+  count()
+```
+
+```{r lr_fit_initial}
+fit1 <- lm(charges ~ ., data = data)
+summary(fit1)
+```
+
+```{r box-cox_transform}
+# Box-Cox transformation
+bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Box-Cox transform.")
+
+# Log transformation
+data$charges <- log(data$charges)
+```
+
+```{r corrplot}
+library(corrplot)
+
+cor_matrix <- cor(data[-7])
+corrplot(cor_matrix, method = "circle")
+```
+
+```{r data_split}
+set.seed(423)
+
+df_shuffled <- bootstrap_results[sample(nrow(bootstrap_results)), ]
+
+n_total <- nrow(df_shuffled)
+n_train <- floor(0.8 * n_total)
+
+train_set <- df_shuffled[1:n_train, ]
+test_set <- df_shuffled[(n_train + 1):n_total, ]
+```
+
+```{r boot_strap_fit}
+model <- lm(charges ~ ., data = train_set)
+summary(model)
+```
+
+```{r res_qq_plot}
+hist(residuals(model), main="Histogram of Residuals", xlab="Residuals", breaks=30)
+qqnorm(residuals(model))
+qqline(residuals(model), col="red")
+```
+
+```{r detailed_residual_plot}
+par(mfrow=c(2, 2))
+
+plot(model,which=1)
+plot(model,which=2)
+plot(model,which=3)
+plot(model,which=4)
+```
+
+```{r model_selection}
+best_subset_fit <- regsubsets(charges ~ ., data = train_set)
+best_subset_summary <- summary(best_subset_fit)
+
+bic <- best_subset_summary$bic
+cp <- best_subset_summary$cp
+
+best_bic <- which.min(bic)
+best_cp <- which.min(cp)
+
+best_subset_summary$which[best_bic, ]
+best_subset_summary$which[best_cp, ]
+```
+
+```{r selected_model}
+selected_model <- lm(charges ~ age+bmi+smoker, data = train_set)
+summary(selected_model)
+```
+
+```{r backward}
+fit1 <- lm(charges~., data=train_set, x=TRUE, y=TRUE)
+step(fit1, dir="backward")
+```
+
+```{r forward}
+fit.empty <- lm(charges~1,data=train_set)
+step(fit.empty, dir="forward", scope=list(upper=fit1,lowwer=fit.empty))
+```
+
+```{r bi-directional}
+fit2 <- lm(charges~smoker + age + bmi + children + sex, data = train_set, x=TRUE, y=TRUE)
+step(fit1, dir="both", k=2)
+```
+
+```{r selected_model_1}
+selected_model <- lm(charges ~ age + sex + bmi + children + smoker, data = train_set, x=TRUE, y=TRUE)
+summary(selected_model)
+```
