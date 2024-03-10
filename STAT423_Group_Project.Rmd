@@ -49,7 +49,6 @@ data$smoker <- as.numeric(as.factor(data$smoker))
 data$region <- as.numeric(as.factor(data$region))
 ```
 
-
 ```{r bootstrap, warning=FALSE}
 bootstrap_df <- function(data, n_bootstrap) {
   bootstrap_results <- list()
