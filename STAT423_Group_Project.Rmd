@@ -94,7 +94,99 @@ plot(fit13,which=3)
 plot(fit13,which=4)
 ```
 
+## Model Selection
 
+The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi` , `age` , and `age:bmi` interaction. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in the following table.
+
+```{r}
+criteria_statistics <- function(mdl.list) {
+  n <- nobs(mdl.list[[1]])
+  DoFs <- sapply(mdl.list, function(mdl) { sum(hatvalues(mdl)) })
+  MSEs <- sapply(mdl.list, function(mdl) { mean(residuals(mdl)^2) })
+  AIC_values <- sapply(mdl.list, function(mdl) { AIC(mdl, k = 2) }) 
+  BIC_values <- sapply(mdl.list, function(mdl) { BIC(mdl) })
+  
+  biggest <- which.max(DoFs)
+  sigma2.hat <- MSEs[[biggest]]*n/(n-DoFs[[biggest]])
+  Cp <- MSEs + 2*sigma2.hat*DoFs/n
+  
+  criteria_values <- cbind(Cp = Cp,
+                           AIC = AIC_values,
+                           BIC = BIC_values)
+  return(criteria_values)
+}
+
+find_best_model <- function(criteria_values, criterion) {
+  best_model_index <- which.min(criteria_values[, criterion])
+  best_model <- models[[best_model_index]]
+  best_combination <- combinations[[best_model_index]]
+  best_criteria_value <- criteria_values[best_model_index, criterion]
+  return(list(model = best_model, combination = best_combination, value = best_criteria_value))
+}
+
+get_combinations <- function(vars) {
+  lapply(1:length(vars), function(x) combn(vars, x, simplify = FALSE))
+}
+
+input_vars <- names(data)[!names(data) %in% c("charges", "smoker")]
+
+combinations <- unlist(get_combinations(input_vars), recursive = FALSE)
+
+create_models <- function(data, combinations) {
+  lapply(combinations, function(vars) {
+    formula <- as.formula(paste("charges ~", paste(vars, collapse = "*")))
+    lm(formula, data = datasmoker)
+  })
+}
+
+models <- create_models(datasmoker, combinations)
+
+criteria_values <- criteria_statistics(models)
+
+best_model_Cp <- find_best_model(criteria_values, "Cp")
+best_model_AIC <- find_best_model(criteria_values, "AIC")
+best_model_BIC <- find_best_model(criteria_values, "BIC")
+
+print("Best Model based on Cp:")
+print(best_model_Cp$model)
+print(best_model_Cp$value)
+print("")
+
+print("Best Model based on AIC:")
+print(best_model_AIC$model)
+print(best_model_AIC$value)
+print("")
+
+print("Best Model based on BIC:")
+print(best_model_BIC$model)
+print(best_model_BIC$value)
+```
+
+| Mallow's Cp| AIC | BIC |
+|----------|----------|----------|
+| 0.03973949 | -81.53324 | -64.65685  |
+
+## Analysis of the selected linear model
+
+
+
+```{r}
+fit_choice <- lm(formula = charges ~ bmi + age + age:bmi, data = datasmoker)
+summary(fit_choice)
+```
+
+## Assumption Checks
+
+```{r}
+par(mfrow=c(2, 2))
+plot(fit_choice,which=3)
+plot(fit_choice,which=2)
+plot(fit_choice,which=4)
+plot(fit_choice,which=5)
+```
+```{r}
+vif(fit_choice)
+```
 ######################################################################################
 
 
