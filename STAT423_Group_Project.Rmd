@@ -1,10 +1,19 @@
 ---
-title: "STAT423_Group_Project"
+title: "Exploring the Factors Influencing Health Insurance Charges"
+subtitle: "with Multiple Linear Regression Analysis"
+author: "Yanting Hu, Shuxin Zhang, Liuyixin Shao, Yi Su, Dongfeng Li"
+graphics: yes
 output: 
-        html_document:
+        pdf_document:
          toc: false
          number_sections: true
-date: "2024-02-23"
+urlcolor: blue
+header-includes:
+- \usepackage{amsmath,amsfonts,amssymb}
+- \usepackage{multicol,graphicx,hyperref,xcolor}
+- \usepackage{setspace} \singlespacing
+fontsize: 11pt
+
 ---
 
 ```{r setup, include=FALSE}
@@ -17,11 +26,12 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
+library(ggpubr)
 ```
 
 # Introduction
 
-Health insurance plays a crucial role in safeguarding individuals and families against the financial burdens associated with healthcare expenses. Especially after Covid-19, "health insurance has become one of the most prominent areas of research." \footnote{(Health Insurance Cost Prediction Using Machine Learning, n.d.)} As medical costs continue to rise and healthcare needs evolve, health insurance charges also increase gradually, after a 4% increase in health insurance in 2023, "American families will face another 4% increase in the cost of private health insurance." \footnote{(ValuePenguin, 2023)} People can't help asking after reading these exposures — How do health insurance charges?
+Health insurance plays a crucial role in safeguarding individuals and families against the financial burdens associated with healthcare expenses. Especially after Covid-19, "health insurance has become one of the most prominent areas of research." \footnote{(Health Insurance Cost Prediction Using Machine Learning, n.d.)} As medical costs continue to rise and healthcare needs evolve, health insurance charges also increase gradually, after a 4% increase in health insurance in 2023, "American families will face another 4% increase in the cost of private health insurance." \footnote{(ValuePenguin, 2023)} People can't help asking after reading these exposures — How do health insurance charges? What factors affect my health insurance charges? Can I predict next year's charges?
 
 This report sets out on an exploratory voyage in an effort to solve the mystery surrounding health insurance charges and then give forecast models. The rest of the report is divided into data description, models, results analysis, and conclusions. Through these sections, this report aims to shed light on the complex interplay of factors that have contributed to health insurance charges. By delving into these topics, we aim to unravel the factors that influence insurance charges and to fit the linear regression models capable of accurately predicting health insurance charges.
 
@@ -32,7 +42,7 @@ This report sets out on an exploratory voyage in an effort to solve the mystery 
 data <- read.csv("Health_insurance.csv")
 ```
 
-```{r data_check}
+```{r data_check, include = FALSE}
 head(data)
 # skimr::skim(data)
 ```
@@ -64,55 +74,75 @@ test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 
 In order to facilitate the development and evaluation of predictive models, we divided the dataset into 80% training and 20% testing subsets. The training set, comprising 80% of the data, used to construct and refine our models in the following sections.
 
-## Data Processing -- Log Transformation
+## Initial Thought: Full Regression Model, Data Processing -- Log Transformation
 
-```{r fig.height=4, fig.width=5.5}
-histogram(train_set1$charges, xlab = "Health Insurance Charges", main = "The Histogram for Health Insurance Charges")
-```
+```{r fig.height=3, fig.width=9}
+par(mfrow = c(1, 3), oma = c(3, 0, 0, 0))
+hist(train_set1$charges, xlab = "Health Insurance Charges", main = "Histogram for Health Insurance Charges")
 
-We can see the distribution of Health Insurance Charges is very right skewed. In order to fit the full regression model, we need a Box-Cox transformation.
-
-```{r box-cox_transform, fig.height=4, fig.width=5.5}
-# Box-Cox transformation
 bc_transform <- boxcox(charges ~ ., data = train_set1, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Box-Cox transform.")
-```
+title(main = "95% CI for the Box-Cox Transform")
 
-```{r log_transform, fig.height=4, fig.width=5.5}
-# Log transformation
 log_charges <- log(train_set1$charges)
-histogram(log_charges, xlab = "Log Health Insurance Charges", main = "The Histogram for Log Health Insurance Charges")
+hist(log_charges, xlab = "Log Health Insurance Charges", main = "Histogram for Log Health Insurance Charges")
 
+mtext("Figure 1: Log Transformation on Health Insurance Charges", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+
+# Reset to default parameters
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+Our initial thought for this analysis is to find the best fitted linear regression model for the entire dataset. Before fitting the full regression model, we see the distribution of Health Insurance Charges is very right skewed (figure 1, first plot). In order to fit the full regression model, we need a Box-Cox transformation. Here, we take $\lambda=0$ and apply a log transformation to the charges (figure 1, second plot). We can see that the  distribution of Health Insurance Charges after log transformation is normal. 
 
-## Fit Full Model And Assumption Checks
 
-We then want to fit a full model to see how personal information is related to the charges. However, we need to check the assumption first.
+### Fit Full Models and Assumption Checks
+
+Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges. We need to check the assumption for our initial model first.
 
 ```{r}
 fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data = train_set1)
 #summary(fit.full)
 ```
 
-```{r full_assumption}
-par(mfrow=c(2, 2))
-plot(fit.full,which=1)
-plot(fit.full,which=2)
-plot(fit.full,which=3)
-plot(fit.full,which=4)
+
+```{r}
+# Set up the layout for the base R plots
+par(mfrow = c(2, 2))
+
+# Create the base R plots and save them in a list
+plot_list <- list()
+plot_list[[1]] <- plot(fit.full, which = 1)
+plot_list[[2]] <- plot(fit.full, which = 2)
+plot_list[[3]] <- plot(fit.full, which = 3)
+plot_list[[4]] <- plot(fit.full, which = 5)
+
+# Reset the plotting layout to the default
+par(mfrow = c(1, 1))
+
+# Create the ggplot2 plots
+p1 <- ggplot(data = train_set1, aes(x = age, y = charges, color = smoker)) +
+  geom_point() +
+  labs(title = "Scatterplot of charges vs. age", x = "age", y = "charges")
+
+p2 <- ggplot(data = train_set1, aes(x = bmi, y = charges, color = smoker)) +
+  geom_point() +
+  labs(title = "Scatterplot of charges vs. bmi", x = "bmi", y = "charges")
+
+# Arrange ggplot2 plots using ggarrange
+ggarrange(p1, p2, ncol = 2)
 ```
+
 
 In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
 
 Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
 
-```{r}
+```{r, include = FALSE}
 plot(train_set1)
 ```
 
 We can clearly see that there exist two regression lines in diagnostic plots for `age` and `log_charges`.
 
-## Split The Dataset Based on Smoke Status
+## Alternative Thought: Split The Dataset Based on Smoke Status
 
 Based on all the observations above, smoking status may have a significant impact on insurance charges. Therefore, we decided to split the dataset into smoker and nonsmoker groups to facilitate more accurate predictions. However, we realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we are going to transform the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis.
  
@@ -126,43 +156,24 @@ In order to address this issue and ensure a more balanced representation of the 
 
 Since the non-smoker uses the bootstrap method which would be introduced below, it is rubustic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
 
-# Method
-
-
-```{r}
-plot(train_set1)
-```
-
-```{r data_check_og}
-par(mfrow=c(2,2))
-
-hist(train_set1$age, main="Age Distribution", xlab="Age")
-hist(train_set1$bmi, main="BMI Distribution", xlab="BMI")
-hist(train_set1$charges, main="Charges Distribution", xlab="Charges")
-```
-```{r lr_fit_initial}
-fitfull <- lm(charges ~ ., data = train_set1)
-summary(fitfull)
-```
-```{r detailed_residual_plot}
-par(mfrow=c(2, 2))
-
-plot(fitfull,which=1)
-plot(fitfull,which=2)
-plot(fitfull,which=3)
-plot(fitfull,which=4)
-```
 ```{r, boxcox}
+par(mfrow = c(2, 3), oma = c(3, 0, 0, 0))
+
 datanosmoker <- train_set1 %>% filter(smoker == "no")
 datanosmoker <- datanosmoker %>% dplyr::select(-smoker)
+
+hist(datanosmoker$charges, xlab = "Health Insurance Charges", main = "Histogram for Health Insurance Charges")
+
 bc_transform <- boxcox(charges ~ ., data = datanosmoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Train Non-Smoker Box-Cox transform.")
 datanosmoker$charges <- log(datanosmoker$charges)
 
+hist(datanosmoker$charges, xlab = "Health Insurance Charges", main = "Histogram for Health Insurance Charges")
+
 test_nosmoker <- test_set1 %>% filter(smoker == "no")
 test_nosmoker <- test_nosmoker %>% dplyr::select(-smoker)
-bc_transform <- boxcox(charges ~ ., data = test_nosmoker, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Test Non-Smoker Box-Cox transform.")
+#bc_transform <- boxcox(charges ~ ., data = test_nosmoker, lambda = seq(-2, 2, by=0.1))
+#title(main = "95% CI for the Test Non-Smoker Box-Cox transform.")
 test_nosmoker$charges <- log(test_nosmoker$charges)
 
 train_set1 <- train_set1 %>%
@@ -170,6 +181,10 @@ train_set1 <- train_set1 %>%
 
 datasmoker <- train_set1 %>% filter(smoker == "yes")
 datasmoker <- datasmoker %>% dplyr::select(-smoker)
+
+hist(datasmoker$charges, xlab = "Health Insurance Charges", main = "Histogram for Log Health Insurance Charges")
+
+
 bc_transform <- boxcox(charges ~ ., data = datasmoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Train Smoker Box-Cox transform.")
 lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
@@ -178,34 +193,25 @@ datasmoker$charges <- (datasmoker$charges^lambda_optimal - 1) / lambda_optimal
 
 test_smoker <- test_set1 %>% filter(smoker == "yes")
 test_smoker <- test_smoker %>% dplyr::select(-smoker)
-bc_transform <- boxcox(charges ~ ., data = test_smoker, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Test Smoker Box-Cox transform.")
+#bc_transform <- boxcox(charges ~ ., data = test_smoker, lambda = seq(-2, 2, by=0.1))
+#title(main = "95% CI for the Test Smoker Box-Cox transform.")
 lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
 lambda_optimal <- 0.5
 test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
-```
 
-```{r}
-fit12 <- lm(charges ~ age+sex+bmi+children+region, data = datasmoker)
-summary(fit12)
-par(mfrow=c(2, 2))
-plot(fit12,which=1)
-plot(fit12,which=2)
-plot(fit12,which=3)
-plot(fit12,which=4)
-```
 
-```{r}
-fit13 <- lm(charges ~ age+sex+bmi+children+region, data = datanosmoker)
-summary(fit13)
-par(mfrow=c(2, 2))
-plot(fit13,which=1)
-plot(fit13,which=2)
-plot(fit13,which=3)
-plot(fit13,which=4)
-```
+hist(datasmoker$charges, xlab = "Health Insurance Charges", main = "Histogram for Log Health Insurance Charges")
 
-## Model Selection
+mtext("Figure 3: Boxcox Transformation on Health Insurance Charges", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+
+par(mfrow = c(1, 1), oma = c(0, 0, 0,0))
+
+```
+# Method
+
+## Smoker
+
+### Model Selection
 
 The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being included. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in the following table.
 
@@ -278,7 +284,7 @@ print(best_model_BIC$value)
 | 1161.372  | 2139.16 | 2156.036  |
 
 
-## Analysis of the selected linear model
+### Analysis of the selected linear model
 
 For the selected model $\sqrt{charges}=42.8299+8.1623bmi+1.5053age-1.8190sex$.
 
@@ -296,7 +302,7 @@ fit_choice <- lm(formula = charges ~ bmi + age + sex, data = datasmoker)
 summary(fit_choice)
 ```
 
-## Assumption Checks
+### Assumption Checks
 
 The residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5 (we might think point 154 is a high leverage point, but its cook distance is still smaller than 0.5, meaning that it is not a serious point), there is no noticeable point with high cook’s distance and leverage.
 
@@ -316,7 +322,7 @@ vif(fit_choice)
 ```
 
 
-## Prediction
+### Prediction
 
 ```{r}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
