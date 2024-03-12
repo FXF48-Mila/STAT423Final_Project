@@ -124,6 +124,7 @@ In order to address this issue and ensure a more balanced representation of the 
 
 ### Non-Smoker
 
+Since the non-smoker uses the bootstrap method which would be introduced below, it is rubustic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
 
 # Method
 
