@@ -71,7 +71,7 @@ data$charges <- log(data$charges)
 
 
 ```{r}
-plot(train_set)
+plot(train_set1)
 ```
 
 ```{r data_check_og}
@@ -82,7 +82,7 @@ hist(train_set1$bmi, main="BMI Distribution", xlab="BMI")
 hist(train_set1$charges, main="Charges Distribution", xlab="Charges")
 ```
 ```{r lr_fit_initial}
-fitfull <- lm(charges ~ ., data = train_set)
+fitfull <- lm(charges ~ ., data = train_set1)
 summary(fitfull)
 ```
 ```{r detailed_residual_plot}
