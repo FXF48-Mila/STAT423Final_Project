@@ -264,94 +264,96 @@ The scatterplot shows the relationship between the actual charge and the charge 
 
 
 
-######################################################################################
+```{r}
+data <- read.csv("Health_insurance.csv")
+data$sex <- as.factor(data$sex)
+data$smoker <- as.factor(data$smoker)
+data$region <- as.factor(data$region)
 
-
-
-```{r smoker}
-# check reasons for innormal
-# irrelated to smoke
-data_smoker <- data %>% filter(smoker == 2)
-
-model <- lm(charges ~ ., data = data_smoker)
-
-qqnorm(residuals(model))
-qqline(residuals(model), col="red")
-
-data_non_smoker <- data %>% filter(smoker == 1)
-
-model <- lm(charges ~ ., data = data_non_smoker)
-
-qqnorm(residuals(model))
-qqline(residuals(model), col="red")
-```
-
-```{r bootstrap, warning=FALSE}
-bootstrap_df <- function(data, n_bootstrap) {
-  bootstrap_results <- list()
-  
-  for (i in 1:n_bootstrap) {
-    sample_data <- data %>% sample_n(size = nrow(data), replace = TRUE)
-    bootstrap_results[[i]] <- summarise_all(sample_data, mean)
-  }
-  
-  do.call(rbind, bootstrap_results)
-}
-
-n_bootstrap <- 1000 # number of n
-
-bootstrap_results <- bootstrap_df(data, n_bootstrap)
-```
-
-```{r data_check_bootstrap}
-par(mfrow=c(2,2))
-
-hist(bootstrap_results$age, main="Age Distribution", xlab="Age")
-hist(bootstrap_results$bmi, main="BMI Distribution", xlab="BMI")
-hist(bootstrap_results$children, main="Children Distribution", xlab="Children")
-hist(bootstrap_results$charges, main="Charges Distribution", xlab="Charges")
-```
-
-```{r data_check_og}
-par(mfrow=c(2,2))
-
-hist(data$age, main="Age Distribution", xlab="Age")
-hist(data$bmi, main="BMI Distribution", xlab="BMI")
-hist(data$children, main="Children Distribution", xlab="Children")
-hist(data$charges, main="Charges Distribution", xlab="Charges")
-```
-
-```{r children_count}
-data %>%
-  group_by(children) %>%
-  count()
-```
-
-```{r lr_fit_initial}
-fit1 <- lm(charges ~ ., data = data)
-summary(fit1)
-```
-
-```{r box-cox_transform}
-# Box-Cox transformation
-bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Box-Cox transform.")
-
-# Log transformation
 data$charges <- log(data$charges)
+
+non_smoker_data <- filter(data, smoker == "no")
+
+initial_model <- lm(charges ~ age + sex + bmi + children + region, data = non_smoker_data)
+
+residuals <- resid(initial_model)
+
+threshold <- quantile(abs(residuals), 0.85)
+
+data_with_small_residuals <- non_smoker_data[abs(residuals) <= threshold, ]
+data_outliers <- non_smoker_data[abs(residuals) > threshold, ]
 ```
 
-```{r corrplot}
-library(corrplot)
-
-cor_matrix <- cor(data[-7])
-corrplot(cor_matrix, method = "circle")
+```{r}
+par(mfrow=c(2, 2))
+plot(initial_model,which=1)
+plot(initial_model,which=2)
+plot(initial_model,which=3)
+plot(initial_model,which=4)
 ```
 
-```{r data_split}
+```{r}
+ggplot(data_with_small_residuals, aes(x = age, y = charges)) + 
+  geom_point() + 
+  labs(title = "Age vs Charges", x = "Age", y = "Charges") +
+  theme_minimal()
+
+ggplot(non_smoker_data, aes(x = age, y = charges)) + 
+  geom_point() + 
+  labs(title = "Age vs Charges", x = "Age", y = "Charges") +
+  theme_minimal()
+
+ggplot(data_outliers, aes(x = age, y = charges)) + 
+  geom_point() + 
+  labs(title = "Age vs Charges", x = "Age", y = "Charges") +
+  theme_minimal()
+```
+
+```{r}
+new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
+```
+
+```{r}
+par(mfrow=c(2, 2))
+plot(new_model,which=1)
+plot(new_model,which=2)
+plot(new_model,which=3)
+plot(new_model,which=4)
+```
+
+```{r}
+sampled_residuals <- sample(resid(new_model), replace = TRUE)
+new_response <- fitted(new_model) + sampled_residuals
+bootstrap_data <- data_with_small_residuals
+bootstrap_data$charges <- new_response
+
+model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
+```
+
+```{r}
+par(mfrow=c(2, 2))
+plot(model2,which=1)
+plot(model2,which=2)
+plot(model2,which=3)
+plot(model2,which=4)
+```
+
+```{r}
+non_smoker_data <- filter(data, smoker == "no")
+
+initial_model <- lm(charges ~ age + sex + bmi + children + region, data = non_smoker_data)
+
+residuals <- resid(initial_model)
+threshold <- quantile(abs(residuals), 0.85)
+
+data_used <- non_smoker_data[abs(residuals) <= threshold, ]
+data_outliers <- non_smoker_data[abs(residuals) > threshold, ]
+```
+
+```{r data_split2}
 set.seed(423)
 
-df_shuffled <- bootstrap_results[sample(nrow(bootstrap_results)), ]
+df_shuffled <- data_used[sample(nrow(data_used)), ]
 
 n_total <- nrow(df_shuffled)
 n_train <- floor(0.8 * n_total)
@@ -360,61 +362,88 @@ train_set <- df_shuffled[1:n_train, ]
 test_set <- df_shuffled[(n_train + 1):n_total, ]
 ```
 
-```{r boot_strap_fit}
-model <- lm(charges ~ ., data = train_set)
-summary(model)
+```{r}
+new_model <- lm(charges ~ age + sex + bmi + children + region, data = train_set)
+
+set.seed(423)
+bootstrap_coefficients <- replicate(1000, {
+  sampled_residuals <- sample(resid(new_model), replace = TRUE)
+  new_response <- fitted(new_model) + sampled_residuals
+  bootstrap_data <- train_set
+  bootstrap_data$charges <- new_response
+  coef(lm(charges ~ age + sex + bmi + children + region, data = bootstrap_data))
+}, simplify = "matrix")
+
+bootstrap_coefficients_df <- as.data.frame(t(bootstrap_coefficients))
+colnames(bootstrap_coefficients_df) <- names(coef(initial_model))
+
+bootstrap_summary <- summary(bootstrap_coefficients_df)
+
+print(bootstrap_summary)
 ```
 
-```{r res_qq_plot}
-hist(residuals(model), main="Histogram of Residuals", xlab="Residuals", breaks=30)
-qqnorm(residuals(model))
-qqline(residuals(model), col="red")
+```{r}
+means <- colMeans(bootstrap_coefficients_df)
+standard_deviations <- apply(bootstrap_coefficients_df, 2, sd)
+confidence_level <- 0.95
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+ci_lower <- means - z_critical * standard_deviations
+ci_upper <- means + z_critical * standard_deviations
+ci_df <- data.frame(lower = ci_lower, upper = ci_upper)
+print(ci_df)
 ```
 
-```{r detailed_residual_plot}
-par(mfrow=c(2, 2))
+```{r}
+beta_0 <- means[1]
+beta_age <- means[2]
+beta_sex_male <- means[3]
+beta_bmi <- means[4]
+beta_children <- means[5]
+beta_region_northwest <- means[6]
+beta_region_southeast <- means[7]
+beta_region_northeast <- means[8]
 
-plot(model,which=1)
-plot(model,which=2)
-plot(model,which=3)
-plot(model,which=4)
+predict_charges <- function(new_data) {
+  beta_0 +
+    beta_age * new_data$age +
+    beta_sex_male * as.numeric(new_data$sex == 'male') +
+    beta_bmi * new_data$bmi +
+    beta_children * new_data$children +
+    beta_region_northwest * as.numeric(new_data$region == 'northwest') +
+    beta_region_southeast * as.numeric(new_data$region == 'southeast') +
+    beta_region_northeast * as.numeric(new_data$region == 'northeast')
+}
 ```
 
-```{r model_selection}
-best_subset_fit <- regsubsets(charges ~ ., data = train_set)
-best_subset_summary <- summary(best_subset_fit)
 
-bic <- best_subset_summary$bic
-cp <- best_subset_summary$cp
+```{r}
+data_for_plot2 <- data.frame(
+  Actual = test_set$charges,
+  LR_Predicted = predict_charges(test_set)
+  ) %>% 
+  pivot_longer(cols = everything(), names_to = "Model", values_to = "Predicted")
 
-best_bic <- which.min(bic)
-best_cp <- which.min(cp)
-
-best_subset_summary$which[best_bic, ]
-best_subset_summary$which[best_cp, ]
+ggplot(data_for_plot2, aes(x = Predicted, fill = Model)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density Plot of Predicted Charges of Testset",
+       x = "Predicted Charges",
+       y = "Density") +
+  theme_minimal()
 ```
 
-```{r selected_model}
-selected_model <- lm(charges ~ age+bmi+smoker, data = train_set)
-summary(selected_model)
-```
+```{r}
+test_smoker <- test_set %>% filter(smoker == "yes")
+data_for_plot <- data.frame(
+  Actual = test_set$charges,
+  LR_Predicted = predict_charges(test_set)
+) %>% 
+  pivot_longer(-Actual, names_to = "Model", values_to = "Predicted")
 
-```{r backward}
-fit1 <- lm(charges~., data=train_set, x=TRUE, y=TRUE)
-step(fit1, dir="backward")
-```
-
-```{r forward}
-fit.empty <- lm(charges~1,data=train_set)
-step(fit.empty, dir="forward", scope=list(upper=fit1,lowwer=fit.empty))
-```
-
-```{r bi-directional}
-fit2 <- lm(charges~smoker + age + bmi + children + sex, data = train_set, x=TRUE, y=TRUE)
-step(fit1, dir="both", k=2)
-```
-
-```{r selected_model_1}
-selected_model <- lm(charges ~ age + sex + bmi + children + smoker, data = train_set, x=TRUE, y=TRUE)
-summary(selected_model)
+ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
+  labs(title = "Comparison of Model Predictions vs Actual Values in testset",
+       x = "Actual Charges",
+       y = "Predicted Charges") +
+  theme_minimal()
 ```
