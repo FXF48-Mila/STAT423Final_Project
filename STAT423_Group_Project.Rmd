@@ -70,7 +70,7 @@ In order to facilitate the development and evaluation of predictive models, we d
 histogram(train_set1$charges, xlab = "Health Insurance Charges", main = "The Histogram for Health Insurance Charges")
 ```
 
-We can see the distribution of Health Insurance Charges is very right skewed. In orde to fit the full regression model, we need a Box-Cox transformation.
+We can see the distribution of Health Insurance Charges is very right skewed. In order to fit the full regression model, we need a Box-Cox transformation.
 
 ```{r box-cox_transform, fig.height=4, fig.width=5.5}
 # Box-Cox transformation
@@ -80,8 +80,8 @@ title(main = "95% CI for the Box-Cox transform.")
 
 ```{r log_transform, fig.height=4, fig.width=5.5}
 # Log transformation
-train_set1$log_charges <- log(train_set1$charges)
-histogram(train_set1$log_charges, xlab = "Log Health Insurance Charges", main = "The Histogram for Log Health Insurance Charges")
+log_charges <- log(train_set1$charges)
+histogram(log_charges, xlab = "Log Health Insurance Charges", main = "The Histogram for Log Health Insurance Charges")
 
 ```
 
