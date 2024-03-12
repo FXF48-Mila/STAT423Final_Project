@@ -13,11 +13,17 @@ library(faraway)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+library(patchwork)
 ```
+
 # Introduction
 
+Health insurance plays a crucial role in safeguarding individuals and families against the financial burdens associated with healthcare expenses. Especially after Covid-19, "health insurance has become one of the most prominent areas of research." \footnote{(Health Insurance Cost Prediction Using Machine Learning, n.d.)} As medical costs continue to rise and healthcare needs evolve, health insurance charges also increase gradually, after a 4% increase in health insurance in 2023, "American families will face another 4% increase in the cost of private health insurance." \footnote{(ValuePenguin, 2023)} People can't help asking after reading these exposures — How do health insurance charges?
+
+This report sets out on an exploratory voyage in an effort to solve the mystery surrounding health insurance charges and then give forecast models. The rest of the report is divided into data description, models, results analysis, and conclusions. Through these sections, this report aims to shed light on the complex interplay of factors that have contributed to health insurance charges. By delving into these topics, we aim to unravel the factors that influence insurance charges and to fit the linear regression models capable of accurately predicting health insurance charges.
+
 # Data
-## About the Data
+## About The Data
 
 ```{r}
 data <- read.csv("Health_insurance.csv")
@@ -25,20 +31,22 @@ data <- read.csv("Health_insurance.csv")
 
 ```{r data_check}
 head(data)
-skimr::skim(data)
+# skimr::skim(data)
 ```
 
+The dataset is collected by Kaggle. \footnote{(Health Insurance Dataset, 2020)} The dataset contains 1338 observations across 7 columns of customer personal information: age, sex(female or male), bmi(body mass index), children(the number of children), smoker(yes or no), regions(customers’ residential area), and charges (insurance charge bill).  Specifically, there are 3 character columns: `sex`, `smoker`, `region`, and 4 numeric columns: `age`, `children`, `bmi`, and `charges`, providing a comprehensive foundation for analysis and exploration of health insurance-related factors.
+
 ## Data Prepocessing
+
 ```{r}
-# data <- data %>%
-#   mutate(children = ifelse(children > 0, "have child", "no child"))
 data$sex <- as.factor(data$sex)
 data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 ```
 
-## Data Split (80% training 20% testing)
-### (Split Before Transformation)
+In order to address the issue of having multiple intercepts due to the presence of categorical variables in regression analysis, we change `sex`, `smoker`, and `region` into factors in R. 
+
+## Data Split 
 ```{r data_split_brefore_transformation}
 set.seed(423)
 
@@ -51,20 +59,72 @@ train_set1 <- df_shuffled[1:n_train, ]
 test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 ```
 
-## Data Transformation(Log)
+In order to facilitate the development and evaluation of predictive models, we divided the dataset into 80% training and 20% testing subsets. The training set, comprising 80% of the data, used to construct and refine our models in the following sections.
 
-```{r box-cox_transform}
-# Box-Cox transformation
-bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Box-Cox transform.")
+## Data Processing -- Log Transformation
 
-# Log transformation
-data$charges <- log(data$charges)
+```{r fig.height=4, fig.width=5.5}
+histogram(train_set1$charges, xlab = "Health Insurance Charges", main = "The Histogram for Health Insurance Charges")
 ```
 
-## Fit Full Model
+We can see the distribution of Health Insurance Charges is very right skewed. In orde to fit the full regression model, we need a Box-Cox transformation.
 
-## Divide the dataset to smoker and non-smoker
+```{r box-cox_transform, fig.height=4, fig.width=5.5}
+# Box-Cox transformation
+bc_transform <- boxcox(charges ~ ., data = train_set1, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Box-Cox transform.")
+```
+
+```{r log_transform, fig.height=4, fig.width=5.5}
+# Log transformation
+train_set1$log_charges <- log(train_set1$charges)
+histogram(train_set1$log_charges, xlab = "Log Health Insurance Charges", main = "The Histogram for Log Health Insurance Charges")
+
+```
+
+## Fit Full Model And Assumption Checks
+
+We then want to fit a full model to see how personal information is related to the charges. However, we need to check the assumption first.
+
+```{r}
+fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data = train_set1)
+#summary(fit.full)
+```
+
+```{r full_assumption}
+par(mfrow=c(2, 2))
+plot(fit.full,which=1)
+plot(fit.full,which=2)
+plot(fit.full,which=3)
+plot(fit.full,which=4)
+```
+
+In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
+
+Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
+
+```{r}
+plot(train_set1)
+```
+
+We can clearly see that there exist two regression lines in diagnostic plots for `age` and `log_charges`.
+
+## Split The Dataset Based on Smoke Status
+
+Based on all the observations above, smoking status may have a significant impact on insurance charges. Therefore, we decided to split the dataset into smoker and nonsmoker groups to facilitate more accurate predictions. However, we realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we are going to transform the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis.
+ 
+### Smoker
+
+```{r}
+train_set1 <- train_set1 %>%
+  mutate(children = ifelse(children > 0, "have child", "no child"))
+```
+
+The potential issue regarding the dataset is the variable representing the number of children. To be more specific, the dataset tends to be a higher frequency of individuals with fewer children (0, 1, or 2) compared to those with a larger number of children (3, 4, or 5). This can lead to imbalanced data distribution and potentially affect the accuracy of statistical analyses, such as regression modeling.
+
+In order to address this issue and ensure a more balanced representation of the data, we transform the numerical variable representing the number of children into a categorical variable with distinct groups: "no child," and "have child." This categorization helps to address the potential skewness in the data distribution and improves the interpretability of regression analysis results.
+
+### Non-Smoker
 
 
 # Method
@@ -481,3 +541,12 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 
 
 The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
+
+
+# References
+
+Health Insurance dataset. (2020, December 18). https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data
+
+K. Bhatia, S. S. Gill, N. Kamboj, M. Kumar and R. K. Bhatia, "Health Insurance Cost Prediction using Machine Learning," 2022 3rd International Conference for Emerging Technology (INCET), Belgaum, India, 2022, pp. 1-5, doi: 10.1109/INCET54531.2022.9824201. keywords: {COVID-19;Pediatrics;Obesity;Costs;Correlation;Pandemics;Linear regression;Health Insurance;Cost Prediction;Machine learning;Regression},
+
+ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. PR Newswire: press release distribution, targeting, monitoring and marketing. https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html#:~:text=After%20a%200.67%25%20increase%20in,for%20healthcare%20providers%20and%20insurers 
