@@ -339,7 +339,7 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 ```
 
 
-The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 350, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 350, the model's predictions tend to be lower, suggesting an underestimation.
+The plot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 
 
