@@ -116,7 +116,8 @@ Based on all the observations above, smoking status may have a significant impac
 ### Smoker
 
 ```{r}
-train_set1 <- train_set1 %>%
+train_set_smoker <- train_set1 %>% filter(smoker == "yes")
+train_set_smoker <- train_set_smoker %>%
   mutate(children = ifelse(children > 0, "have child", "no child"))
 ```
 
