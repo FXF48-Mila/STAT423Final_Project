@@ -394,6 +394,32 @@ print(ci_df)
 ```
 
 ```{r}
+means <- colMeans(bootstrap_coefficients_df)
+standard_deviations <- apply(bootstrap_coefficients_df, 2, sd)
+confidence_level <- 0.95
+z_critical <- qnorm(1 - (1 - confidence_level) / 2)
+ci_lower <- means - z_critical * standard_deviations
+ci_upper <- means + z_critical * standard_deviations
+coefficients_df <- data.frame(
+  term = names(means),
+  estimate = means,
+  ci_lower = ci_lower,
+  ci_upper = ci_upper
+)
+
+coefficients_df <- coefficients_df[-1, ]
+
+p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
+  theme_minimal() +
+  labs(x = "Term", y = "Estimate", title = "Confidence Intervals for Model Coefficients") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+print(p)
+```
+
+```{r}
 beta_0 <- means[1]
 beta_age <- means[2]
 beta_sex_male <- means[3]
