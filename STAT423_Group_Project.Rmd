@@ -1,9 +1,6 @@
 ---
 title: "STAT423_Group_Project"
-output: 
-        html_document:
-         toc: false
-         number_sections: true
+output: html_document
 date: "2024-02-23"
 ---
 
@@ -16,17 +13,11 @@ library(faraway)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
-library(patchwork)
 ```
-
 # Introduction
 
-Health insurance plays a crucial role in safeguarding individuals and families against the financial burdens associated with healthcare expenses. Especially after Covid-19, "health insurance has become one of the most prominent areas of research." \footnote{(Health Insurance Cost Prediction Using Machine Learning, n.d.)} As medical costs continue to rise and healthcare needs evolve, health insurance charges also increase gradually, after a 4% increase in health insurance in 2023, "American families will face another 4% increase in the cost of private health insurance." \footnote{(ValuePenguin, 2023)} People can't help asking after reading these exposures — How do health insurance charges?
-
-This report sets out on an exploratory voyage in an effort to solve the mystery surrounding health insurance charges and then give forecast models. The rest of the report is divided into data description, models, results analysis, and conclusions. Through these sections, this report aims to shed light on the complex interplay of factors that have contributed to health insurance charges. By delving into these topics, we aim to unravel the factors that influence insurance charges and to fit the linear regression models capable of accurately predicting health insurance charges.
-
 # Data
-## About The Data
+## About the Data
 
 ```{r}
 data <- read.csv("Health_insurance.csv")
@@ -34,22 +25,20 @@ data <- read.csv("Health_insurance.csv")
 
 ```{r data_check}
 head(data)
-# skimr::skim(data)
+skimr::skim(data)
 ```
 
-The dataset is collected by Kaggle. \footnote{(Health Insurance Dataset, 2020)} The dataset contains 1338 observations across 7 columns of customer personal information: age, sex(female or male), bmi(body mass index), children(the number of children), smoker(yes or no), regions(customers’ residential area), and charges (insurance charge bill).  Specifically, there are 3 character columns: `sex`, `smoker`, `region`, and 4 numeric columns: `age`, `children`, `bmi`, and `charges`, providing a comprehensive foundation for analysis and exploration of health insurance-related factors.
-
 ## Data Prepocessing
-
 ```{r}
+# data <- data %>%
+#   mutate(children = ifelse(children > 0, "have child", "no child"))
 data$sex <- as.factor(data$sex)
 data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 ```
 
-In order to address the issue of having multiple intercepts due to the presence of categorical variables in regression analysis, we change `sex`, `smoker`, and `region` into factors in R. 
-
-## Data Split 
+## Data Split (80% training 20% testing)
+### (Split Before Transformation)
 ```{r data_split_brefore_transformation}
 set.seed(423)
 
@@ -62,67 +51,20 @@ train_set1 <- df_shuffled[1:n_train, ]
 test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 ```
 
-In order to facilitate the development and evaluation of predictive models, we divided the dataset into 80% training and 20% testing subsets. The training set, comprising 80% of the data, used to construct and refine our models in the following sections.
+## Data Transformation(Log)
 
-## Data Processing -- Log Transformation
-
-```{r fig.height=4, fig.width=5.5}
-histogram(train_set1$charges, xlab = "Health Insurance Charges", main = "The Histogram for Health Insurance Charges")
-```
-
-We can see the distribution of Health Insurance Charges is very right skewed. In orde to fit the full regression model, we need a Box-Cox transformation.
-
-```{r box-cox_transform, fig.height=4, fig.width=5.5}
+```{r box-cox_transform}
 # Box-Cox transformation
-bc_transform <- boxcox(charges ~ ., data = train_set1, lambda = seq(-2, 2, by=0.1))
+bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Box-Cox transform.")
-```
 
-```{r log_transform, fig.height=4, fig.width=5.5}
 # Log transformation
-train_set1$log_charges <- log(train_set1$charges)
-histogram(train_set1$log_charges, xlab = "Log Health Insurance Charges", main = "The Histogram for Log Health Insurance Charges")
-
+data$charges <- log(data$charges)
 ```
 
-## Fit Full Model And Assumption Checks
+## Fit Full Model
 
-We then want to fit a full model to see how personal information is related to the charges. However, we need to check the assumption first.
-
-```{r}
-fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data = train_set1)
-#summary(fit.full)
-```
-
-```{r full_assumption}
-par(mfrow=c(2, 2))
-plot(fit.full,which=1)
-plot(fit.full,which=2)
-plot(fit.full,which=3)
-plot(fit.full,which=4)
-```
-
-In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
-
-Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
-
-```{r}
-plot(train_set1)
-```
-
-We can clearly see that there exist two regression lines in diagnostic plots for `age` and `log_charges`.
-
-## Split The Dataset Based on Smoke Status
-
-Based on all the observations above, smoking status may have a significant impact on insurance charges. Therefore, we decided to split the dataset into smoker and nonsmoker groups to facilitate more accurate predictions. However, we realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we are going to transform the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis.
- 
-### Smoker
-
-The potential issue regarding the dataset is the variable representing the number of children. To be more specific, the dataset tends to be a higher frequency of individuals with fewer children (0, 1, or 2) compared to those with a larger number of children (3, 4, or 5). This can lead to imbalanced data distribution and potentially affect the accuracy of statistical analyses, such as regression modeling.
-
-In order to address this issue and ensure a more balanced representation of the data, we transform the numerical variable representing the number of children into a categorical variable with distinct groups: "no child," and "have child." This categorization helps to address the potential skewness in the data distribution and improves the interpretability of regression analysis results.
-
-### Non-Smoker
+## Divide the dataset to smoker and non-smoker
 
 
 # Method
@@ -140,7 +82,9 @@ hist(train_set1$bmi, main="BMI Distribution", xlab="BMI")
 hist(train_set1$charges, main="Charges Distribution", xlab="Charges")
 ```
 ```{r lr_fit_initial}
-fitfull <- lm(charges ~ ., data = train_set1)
+train_setinitial <- train_set1
+train_setinitial$charges <- log(train_setinitial$charges)
+fitfull <- lm(charges ~ ., data = train_setinitial)
 summary(fitfull)
 ```
 ```{r detailed_residual_plot}
@@ -184,6 +128,7 @@ lambda_optimal <- 0.5
 test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
 ```
 
+
 ```{r}
 fit12 <- lm(charges ~ age+sex+bmi+children+region, data = datasmoker)
 summary(fit12)
@@ -191,18 +136,19 @@ par(mfrow=c(2, 2))
 plot(fit12,which=1)
 plot(fit12,which=2)
 plot(fit12,which=3)
-plot(fit12,which=4)
+plot(fit12,which=5)
 ```
 
 ```{r}
 fit13 <- lm(charges ~ age+sex+bmi+children+region, data = datanosmoker)
 summary(fit13)
 par(mfrow=c(2, 2))
-plot(fit13,which=1)
-plot(fit13,which=2)
 plot(fit13,which=3)
+plot(fit13,which=2)
 plot(fit13,which=4)
+plot(fit13,which=5)
 ```
+
 
 ## Model Selection
 
@@ -238,13 +184,13 @@ get_combinations <- function(vars) {
   lapply(1:length(vars), function(x) combn(vars, x, simplify = FALSE))
 }
 
-input_vars <- names(data)[!names(data) %in% c("charges", "smoker")]
+input_vars <- names(data)[!names(data) %in% c("charges", "smoker", "age", "bmi")]
 
 combinations <- unlist(get_combinations(input_vars), recursive = FALSE)
 
 create_models <- function(data, combinations) {
   lapply(combinations, function(vars) {
-    formula <- as.formula(paste("charges ~", paste(vars, collapse = "*")))
+    formula <- as.formula(paste("charges ~ age + bmi +", paste(vars, collapse = "*")))
     lm(formula, data = datasmoker)
   })
 }
@@ -291,7 +237,7 @@ The F-statistic 220.3 with a significantly small p-value suggests that the overa
 variables. 
 
 ```{r}
-fit_choice <- lm(formula = charges ~ bmi + age + age:bmi, data = datasmoker)
+fit_choice <- lm(formula = charges ~ bmi + age + sex, data = datasmoker)
 summary(fit_choice)
 ```
 
@@ -304,11 +250,12 @@ problem for this model. Let's check the multicollinearity for each variable by c
 
 According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
 
+
 ```{r}
 par(mfrow=c(2, 2))
-plot(fit_choice,which=3)
+plot(fit_choice,which=1)
 plot(fit_choice,which=2)
-plot(fit_choice,which=4)
+plot(fit_choice,which=3)
 plot(fit_choice,which=5)
 ```
 
@@ -320,7 +267,7 @@ vif(fit_choice)
 ## Prediction
 
 ```{r}
-fit_choice <- lm(formula = charges ~ bmi + age + age:bmi, data = test_smoker)
+fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
 data_for_plot <- data.frame(
   Actual = test_smoker$charges,
   LR_Selected_Predicted = predict(fit_choice, newdata = test_smoker)
@@ -399,7 +346,7 @@ ggplot(data_outliers, aes(x = age, y = charges)) +
   theme_minimal()
 ```
 
-Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
+Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. Therefore, the linear regression model would be:
 
 ```{r}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
@@ -414,53 +361,6 @@ plot(new_model,which=2)
 plot(new_model,which=3)
 plot(new_model,which=4)
 ```
-From the Residuals vs. Fitted Values plot, the points are approximately centered around the line y=0, so mean zero assumption is possible to appear to hold. The variability of the points on below the line y=0 is larger than that of the points above the line y=0 on both tails, which indicates that the variance is not constant, so the constant variance assumption does not appear to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the spread of residuals, meaning the errors have non-constant variance. Lastly, the "Cook's distance" plot identifies observations 609, 285, and 713 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
-
-To improve our model performance and better satisfy our model assumption, we would consider to use residual bootstrap[@Chen2017].
-
-The residual bootstrap first generates IID
-$$
-\hat{\epsilon}_1^*, \ldots, \hat{\epsilon}_n^*
-$$
-such that for each $\hat{\epsilon}_i^*$,
-$$
-P(\hat{\epsilon}_i^* = \hat\epsilon_i) = \frac{1}{n}, \quad \forall n = 1, \ldots, n.
-$$
-And then generates a new bootstrap sample
-$$
-(X_1^*, Y_1^*), \ldots, (X_n^*, Y_n^*)
-$$
-via
-$$
-X_i^* = X_i, \quad Y_i^* = \hat{\beta}_0 + \hat{\beta}_1X_i + \hat{\epsilon}_i^*.
-$$
-Namely, we fixed the covariate $X_i$ but generate a new value of $Y_i$ using the fitted regression function and the `noise' from sampling the residuals with replacement.
-
-Now we would repeat the process  B times, we would have
-
-\begin{align*}
-& (X_1^{*(1)}, Y_1^{*(1)}), \ldots, (X_n^{*(1)}, Y_n^{*(1)}) \\
-& (X_1^{*(2)}, Y_1^{*(2)}), \ldots, (X_n^{*(2)}, Y_n^{*(2)}) \\
-& \vdots \\
-& (X_1^{*(B)}, Y_1^{*(B)}), \ldots, (X_n^{*(B)}, Y_n^{*(B)}).
-\end{align*}
-
-For each bootstrap sample, say $(X_1^{*(\ell)}, Y_1^{*(\ell)}), \ldots, (X_n^{*(\ell)}, Y_n^{*(\ell)})$, we fit the linear regression, leading to a bootstrap estimate of the fitted coefficients $\hat{\beta}_0^{*(\ell)}, \hat{\beta}_1^{*(\ell)}$. Thus, the $B$ bootstrap samples leads to $B$ sets of fitted coefficients. We then estimate the variance by
-
-\begin{align*}
-\widehat{\text{Var}}(\hat{\beta}_0) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_0^{*(\ell)} - \bar{\hat{\beta}}_0)^2, & \bar{\hat{\beta}}_0 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_0^{*(\ell)}, \\
-\widehat{\text{Var}}(\hat{\beta}_1) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_1^{*(\ell)} - \bar{\hat{\beta}}_1)^2, & \bar{\hat{\beta}}_1 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_1^{*(\ell)}, \\
-\end{align*}
-
-Thus, we would construct our confidence interval by:
-
-$$
-\text{C.I.}(\hat{\beta}_0) = \hat{\beta}_0 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\text{Var}}(\hat{\beta}_0)},
-$$
-
-$$
-\text{C.I.}(\hat{\beta}_1) = \hat{\beta}_1 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\text{Var}}(\hat{\beta}_1)}.
-$$
 
 ```{r}
 sampled_residuals <- sample(resid(new_model), replace = TRUE)
@@ -479,16 +379,38 @@ plot(model2,which=3)
 plot(model2,which=4)
 ```
 
-From the Residuals vs. Fitted Values plot, the points are centered around the line y=0, so mean zero assumption is possible to appear to hold. the variability of residuals is consistent across all fitted values, which indicates that the variance is constant, so the constant variance assumption appears to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the constant spread of residuals, meaning the errors have constant variance. Lastly, the "Cook's distance" plot identifies observations 342, 417, and 554 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
+```{r}
+# non_smoker_data <- filter(data, smoker == "no")
+
+initial_model <- lm(charges ~ age + sex + bmi + children + region, data = non_smoker_data)
+
+residuals <- resid(initial_model)
+threshold <- quantile(abs(residuals), 0.85)
+
+data_used <- non_smoker_data[abs(residuals) <= threshold, ]
+data_outliers <- non_smoker_data[abs(residuals) > threshold, ]
+```
+
+```{r data_split2}
+set.seed(423)
+
+df_shuffled <- data_used[sample(nrow(data_used)), ]
+
+n_total <- nrow(df_shuffled)
+n_train <- floor(0.8 * n_total)
+
+train_set <- df_shuffled[1:n_train, ]
+test_set <- df_shuffled[(n_train + 1):n_total, ]
+```
 
 ```{r}
-new_model <- lm(charges ~ age + sex + bmi + children + region, data = datanosmoker)
+new_model <- lm(charges ~ age + sex + bmi + children + region, data = train_set)
 
 set.seed(423)
 bootstrap_coefficients <- replicate(1000, {
   sampled_residuals <- sample(resid(new_model), replace = TRUE)
   new_response <- fitted(new_model) + sampled_residuals
-  bootstrap_data <- datanosmoker
+  bootstrap_data <- train_set
   bootstrap_data$charges <- new_response
   coef(lm(charges ~ age + sex + bmi + children + region, data = bootstrap_data))
 }, simplify = "matrix")
@@ -538,23 +460,8 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
 print(p)
 ```
 
-The plot shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors  regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi and regionnorthwest has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
+The plot shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors regionnorthwest, regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
 
-The result is slightly inconsistent with the linear model using `lm()` directly. This might because the standardized residuals are still not constant across fitted values and therefore might including some violations. Bootstrap methods can overcome this situation by resampling from residuals.
-
-For predictions, we would consider in the test set that we still use the 80% quantile of the empirical residuals from the initial regression model in the training set as the threshold to judge if the given data is outlier or not. That is to say,
-$$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon_{train}}\}.$$
-
-```{r}
-# non_smoker_data <- filter(data, smoker == "no")
-new_predictions <- predict(initial_model, newdata = test_nosmoker)
-
-residuals <- test_nosmoker$charges - new_predictions
-threshold <- quantile(abs(residuals), 0.85)
-
-data_test <- test_nosmoker[abs(residuals) <= threshold, ]
-test_outliers <- test_nosmoker[abs(residuals) > threshold, ]
-```
 
 ```{r}
 beta_0 <- means[1]
@@ -580,8 +487,8 @@ predict_charges <- function(new_data) {
 
 ```{r}
 data_for_plot <- data.frame(
-  Actual = data_test$charges,
-  LR_Predicted = predict_charges(data_test)
+  Actual = test_set$charges,
+  LR_Predicted = predict_charges(test_set)
 ) %>% 
   pivot_longer(-Actual, names_to = "Model", values_to = "Predicted")
 
@@ -596,13 +503,3 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 
 
 The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
-
-# Reference
-
-Health Insurance dataset. (2020, December 18). https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data
-
-K. Bhatia, S. S. Gill, N. Kamboj, M. Kumar and R. K. Bhatia, "Health Insurance Cost Prediction using Machine Learning," 2022 3rd International Conference for Emerging Technology (INCET), Belgaum, India, 2022, pp. 1-5, doi: 10.1109/INCET54531.2022.9824201. keywords: {COVID-19;Pediatrics;Obesity;Costs;Correlation;Pandemics;Linear regression;Health Insurance;Cost Prediction;Machine learning;Regression},
-
-ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. PR Newswire: press release distribution, targeting, monitoring and marketing. https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html#:~:text=After%20a%200.67%25%20increase%20in,for%20healthcare%20providers%20and%20insurers 
-
-Chen, Y. (n.d.). Lecture 6: Bootstrap for regression https://faculty.washington.edu/yenchic/17Sp_403/Lec6-bootstrap_reg.pdf 
