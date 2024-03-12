@@ -596,6 +596,11 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 
 The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
 
+# Discussion
+
+From the above analysis, for the smokers, the result showed that bmi is a strong predictor of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, regionsoutheast and regionsouthwest are statistically significant predictors, while bmi and regionnorthwest are not statistically significant predictors. Using the 80% quantile of the empirical residuals in the model, it appears to predict the charges well. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
+Based on what we learned from this research, we should use more advanced predictive modelling methods and keep improving the models to better reflect how healthcare use and prices change over time. The clear effect that smoking has on insurance rates shows how important it is to have custom models that take living factors into account. As health care needs and insurance policies change, it will be important to use machine learning algorithms and keep models up to date with new data to make predictions more accurate and make sure they stay relevant to current trends.
+
 # Reference
 
 Health Insurance dataset. (2020, December 18). https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data
