@@ -31,6 +31,18 @@ data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 ```
 
+```{r data_split_brefore_transformation}
+set.seed(423)
+
+df_shuffled <- data[sample(nrow(data)), ]
+
+n_total <- nrow(df_shuffled)
+n_train <- floor(0.8 * n_total)
+
+train_set1 <- df_shuffled[1:n_train, ]
+test_set1 <- df_shuffled[(n_train + 1):n_total, ]
+```
+
 ```{r box-cox_transform}
 # Box-Cox transformation
 bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
@@ -51,6 +63,7 @@ n_train <- floor(0.8 * n_total)
 train_set <- df_shuffled[1:n_train, ]
 test_set <- df_shuffled[(n_train + 1):n_total, ]
 ```
+
 
 ```{r}
 plot(train_set)
@@ -75,8 +88,33 @@ plot(fitfull,which=2)
 plot(fitfull,which=3)
 plot(fitfull,which=4)
 ```
+```{r, boxcox}
+datasmoker <- train_set1 %>% filter(smoker == "yes")
+datasmoker <- datasmoker %>% dplyr::select(-smoker)
+bc_transform <- boxcox(charges ~ ., data = datasmoker, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Train Smoker Box-Cox transform.")
+lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
+datasmoker$charges <- (datasmoker$charges^lambda_optimal - 1) / lambda_optimal
+
+test_smoker <- test_set1 %>% filter(smoker == "yes")
+test_smoker <- test_smoker %>% dplyr::select(-smoker)
+bc_transform <- boxcox(charges ~ ., data = test_smoker, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Test Smoker Box-Cox transform.")
+lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
+test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
+
+datanosmoker <- train_set %>% filter(smoker == "no")
+datanosmoker <- datanosmoker %>% dplyr::select(-smoker)
+bc_transform <- boxcox(charges ~ ., data = datanosmoker, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Train Non-Smoker Box-Cox transform.")
+
+test_nosmoker <- test_set1 %>% filter(smoker == "no")
+test_nosmoker <- test_nosmoker %>% dplyr::select(-smoker)
+bc_transform <- boxcox(charges ~ ., data = test_nosmoker, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Test Non-Smoker Box-Cox transform.")
+```
+
 ```{r}
-datasmoker <- train_set %>% filter(smoker == "yes")
 fit12 <- lm(charges ~ age+sex+bmi+children+region, data = datasmoker)
 summary(fit12)
 par(mfrow=c(2, 2))
@@ -87,7 +125,6 @@ plot(fit12,which=4)
 ```
 
 ```{r}
-datanosmoker <- train_set %>% filter(smoker == "no")
 fit13 <- lm(charges ~ age+sex+bmi+children+region, data = datanosmoker)
 summary(fit13)
 par(mfrow=c(2, 2))
@@ -187,14 +224,16 @@ plot(fit_choice,which=2)
 plot(fit_choice,which=4)
 plot(fit_choice,which=5)
 ```
+
 ```{r}
 vif(fit_choice)
 ```
 
+
 ## Prediction
 
 ```{r}
-test_smoker <- train_set %>% filter(smoker == "yes")
+fit_choice <- lm(formula = charges ~ bmi + age + age:bmi, data = test_smoker)
 data_for_plot <- data.frame(
   Actual = test_smoker$charges,
   LR_Selected_Predicted = predict(fit_choice, newdata = test_smoker)
@@ -211,7 +250,8 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   theme_minimal()
 ```
 
-The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the black line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 10, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 10, the model's predictions tend to be lower, suggesting an underestimation.
+The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the black line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 10.3, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 10.3, the model's predictions tend to be lower, suggesting an underestimation.
+
 
 
 ######################################################################################
