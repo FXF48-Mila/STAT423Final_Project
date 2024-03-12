@@ -77,9 +77,9 @@ plot(train_set)
 ```{r data_check_og}
 par(mfrow=c(2,2))
 
-hist(train_set$age, main="Age Distribution", xlab="Age")
-hist(train_set$bmi, main="BMI Distribution", xlab="BMI")
-hist(train_set$charges, main="Charges Distribution", xlab="Charges")
+hist(train_set1$age, main="Age Distribution", xlab="Age")
+hist(train_set1$bmi, main="BMI Distribution", xlab="BMI")
+hist(train_set1$charges, main="Charges Distribution", xlab="Charges")
 ```
 ```{r lr_fit_initial}
 fitfull <- lm(charges ~ ., data = train_set)
@@ -110,7 +110,7 @@ lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
 lambda_optimal <- 0.5
 test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
 
-datanosmoker <- train_set %>% filter(smoker == "no")
+datanosmoker <- train_set1 %>% filter(smoker == "no")
 datanosmoker <- datanosmoker %>% dplyr::select(-smoker)
 bc_transform <- boxcox(charges ~ ., data = datanosmoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Train Non-Smoker Box-Cox transform.")
@@ -260,8 +260,10 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   theme_minimal()
 ```
 
-The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the black line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 10.3, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 10.3, the model's predictions tend to be lower, suggesting an underestimation.
+For the selected model $charges=41.3066179+8.1802807bmi+1.5338854age-0.0009364bmi:age$, the only significant predictors is bmi. The predictor age and interaction term bmi:age are not statistically significant, which implies that the effect of age and the interaction effect between 'bmi' and 'age' on charges are not evident from the data. The F-statistic 220.3 with a significantly small p-value suggests that the overall model is statistically significant. The residual standard error is 33.76 and the adjusted R-squared value is 0.7537, which shows the proportion of the variance for the dependent variable explained by predictor
+variables. 
 
+The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 350, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 350, the model's predictions tend to be lower, suggesting an underestimation.
 
 
 ```{r}
@@ -419,6 +421,9 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
 print(p)
 ```
 
+ The plot shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors regionnorthwest, regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model.
+
+
 ```{r}
 beta_0 <- means[1]
 beta_age <- means[2]
@@ -473,3 +478,6 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
        y = "Predicted Charges") +
   theme_minimal()
 ```
+
+ The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
+
