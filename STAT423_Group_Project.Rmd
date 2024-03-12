@@ -1,6 +1,9 @@
 ---
 title: "STAT423_Group_Project"
-output: html_document
+output: 
+        html_document:
+         toc: false
+         number_sections: true
 date: "2024-02-23"
 ---
 
