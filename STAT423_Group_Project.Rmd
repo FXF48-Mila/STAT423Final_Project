@@ -208,7 +208,7 @@ plot(fit13,which=4)
 
 The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being included. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in the following table.
 
-```{r}
+```{r, include = FALSE}
 criteria_statistics <- function(mdl.list) {
   n <- nobs(mdl.list[[1]])
   DoFs <- sapply(mdl.list, function(mdl) { sum(hatvalues(mdl)) })
@@ -279,17 +279,16 @@ print(best_model_BIC$value)
 
 ## Analysis of the selected linear model
 
-For the selected model $\sqrt{charges}=41.3066179+8.1802807bmi+1.5338854age-0.0009364bmi:age$.
+For the selected model $\sqrt{charges}=42.8299+8.1623bmi+1.5053age-1.8190sex$.
 
-Here, the intercept is not worthy for explaination because it suggests that when both BMI and age are zero, the square root of charges is expected to be approximately 41.3066179. However, no one will have a bmi or age of zero.
+Here, the intercept is not worthy for explaination because it suggests that when both BMI and age are zero, the square root of charges for female is expected to be approximately 42.8299 and for male is expected to be 41.0109. However, no one will have a bmi or age of zero.
 
-According to the summary, for every one unit increase in bmi, the estimate of the average square root of charges increase 8.1802807. For every one increase in age, the estimate of the average square root of charges increase 1.5338854. While for every one unit increase in the product of BMI and age, the square root of charges is expected to decrease by approximately 0.0009364.
+According to the summary, keeping other factors the same, for every one unit increase in bmi, the estimate of the average square root of charges increase 8.1623. For every one increase in age, the estimate of the average square root of charges increase 1.5053. Based on teh p-values, the significant predictors are `bmi` and `age`, which implies that the effect of age and bmi on the square root of charges are evident from the data.
 
 
-Here, the only significant predictors is `bmi`. The predictor age and interaction term bmi:age are not statistically significant, which implies that the effect of age and the interaction effect between 'bmi' and 'age' on charges are not evident from the data.
+The coefficient for sexmale is -1.8190, indicating that, keeping other factors the same, being male is associated with a decrease in the square root of charges of -1.8190 compared to being female. However, this effect is not statistically significant, as indicated by the p-value, which suggests that sex may not have a strong influence on the square root of charges within this model.
 
-The F-statistic 220.3 with a significantly small p-value suggests that the overall model is statistically significant. The residual standard error is 33.76 and the adjusted R-squared value is 0.7537, which shows the proportion of the variance for the dependent variable explained by predictor
-variables. 
+The F-statistic 220.5 with a significantly small p-value suggests that the overall model is statistically significant. The residual standard error is 33.75. The R-squared value is 0.7573, meaning that the model explains approximately 75.73% of the variability in charges, which is quite high. The adjusted R-squared value is 0.7539, which is also quite high and close to the R-squared value, suggesting that the model is not being overly penalized for having unnecessary predictors.
 
 ```{r}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = datasmoker)
@@ -298,18 +297,16 @@ summary(fit_choice)
 
 ## Assumption Checks
 
-The residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5, there is no noticeable point with high cook’s distance and leverage.
+The residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5 (we might think point 154 is a high leverage point, but its cook distance is still smaller than 0.5, meaning that it is not a serious point), there is no noticeable point with high cook’s distance and leverage.
 
-We can see that the standard error for all the parameters in the full model are all small. Thus, there should not be serious multicollinearity
-problem for this model. Let's check the multicollinearity for each variable by calculating the vif.
-
-According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
+We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
+problem for this model. According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
 
 ```{r}
 par(mfrow=c(2, 2))
-plot(fit_choice,which=3)
+plot(fit_choice,which=1)
 plot(fit_choice,which=2)
-plot(fit_choice,which=4)
+plot(fit_choice,which=3)
 plot(fit_choice,which=5)
 ```
 
