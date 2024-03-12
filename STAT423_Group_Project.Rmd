@@ -337,8 +337,6 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   theme_minimal()
 ```
 
-For the selected model $charges=41.3066179+8.1802807bmi+1.5338854age-0.0009364bmi:age$, the only significant predictors is bmi. The predictor age and interaction term bmi:age are not statistically significant, which implies that the effect of age and the interaction effect between 'bmi' and 'age' on charges are not evident from the data. The F-statistic 220.3 with a significantly small p-value suggests that the overall model is statistically significant. The residual standard error is 33.76 and the adjusted R-squared value is 0.7537, which shows the proportion of the variance for the dependent variable explained by predictor
-variables. 
 
 The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 350, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 350, the model's predictions tend to be lower, suggesting an underestimation.
 
