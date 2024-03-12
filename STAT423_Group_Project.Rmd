@@ -115,12 +115,6 @@ Based on all the observations above, smoking status may have a significant impac
  
 ### Smoker
 
-```{r}
-train_set_smoker <- train_set1 %>% filter(smoker == "yes")
-train_set_smoker <- train_set_smoker %>%
-  mutate(children = ifelse(children > 0, "have child", "no child"))
-```
-
 The potential issue regarding the dataset is the variable representing the number of children. To be more specific, the dataset tends to be a higher frequency of individuals with fewer children (0, 1, or 2) compared to those with a larger number of children (3, 4, or 5). This can lead to imbalanced data distribution and potentially affect the accuracy of statistical analyses, such as regression modeling.
 
 In order to address this issue and ensure a more balanced representation of the data, we transform the numerical variable representing the number of children into a categorical variable with distinct groups: "no child," and "have child." This categorization helps to address the potential skewness in the data distribution and improves the interpretability of regression analysis results.
@@ -155,6 +149,21 @@ plot(fitfull,which=3)
 plot(fitfull,which=4)
 ```
 ```{r, boxcox}
+datanosmoker <- train_set1 %>% filter(smoker == "no")
+datanosmoker <- datanosmoker %>% dplyr::select(-smoker)
+bc_transform <- boxcox(charges ~ ., data = datanosmoker, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Train Non-Smoker Box-Cox transform.")
+datanosmoker$charges <- log(datanosmoker$charges)
+
+test_nosmoker <- test_set1 %>% filter(smoker == "no")
+test_nosmoker <- test_nosmoker %>% dplyr::select(-smoker)
+bc_transform <- boxcox(charges ~ ., data = test_nosmoker, lambda = seq(-2, 2, by=0.1))
+title(main = "95% CI for the Test Non-Smoker Box-Cox transform.")
+test_nosmoker$charges <- log(test_nosmoker$charges)
+
+train_set1 <- train_set1 %>%
+  mutate(children = ifelse(children > 0, "have child", "no child"))
+
 datasmoker <- train_set1 %>% filter(smoker == "yes")
 datasmoker <- datasmoker %>% dplyr::select(-smoker)
 bc_transform <- boxcox(charges ~ ., data = datasmoker, lambda = seq(-2, 2, by=0.1))
@@ -170,19 +179,6 @@ title(main = "95% CI for the Test Smoker Box-Cox transform.")
 lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
 lambda_optimal <- 0.5
 test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
-
-datanosmoker <- train_set1 %>% filter(smoker == "no")
-datanosmoker <- datanosmoker %>% dplyr::select(-smoker)
-bc_transform <- boxcox(charges ~ ., data = datanosmoker, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Train Non-Smoker Box-Cox transform.")
-datanosmoker$charges <- log(datanosmoker$charges)
-
-test_nosmoker <- test_set1 %>% filter(smoker == "no")
-test_nosmoker <- test_nosmoker %>% dplyr::select(-smoker)
-bc_transform <- boxcox(charges ~ ., data = test_nosmoker, lambda = seq(-2, 2, by=0.1))
-title(main = "95% CI for the Test Non-Smoker Box-Cox transform.")
-test_nosmoker$charges <- log(test_nosmoker$charges)
-
 ```
 
 ```{r}
