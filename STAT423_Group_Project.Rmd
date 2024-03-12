@@ -14,6 +14,10 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 ```
+# Introduction
+
+# Data
+## About the Data
 
 ```{r}
 data <- read.csv("Health_insurance.csv")
@@ -23,6 +27,8 @@ data <- read.csv("Health_insurance.csv")
 head(data)
 skimr::skim(data)
 ```
+
+## Data Prepocessing
 ```{r}
 data <- data %>%
   mutate(children = ifelse(children > 0, "have child", "no child"))
@@ -31,6 +37,8 @@ data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 ```
 
+## Data Split (80% training 20% testing)
+### (Split Before Transformation)
 ```{r data_split_brefore_transformation}
 set.seed(423)
 
@@ -43,6 +51,8 @@ train_set1 <- df_shuffled[1:n_train, ]
 test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 ```
 
+## Data Transformation(Log)
+
 ```{r box-cox_transform}
 # Box-Cox transformation
 bc_transform <- boxcox(charges ~ ., data = data, lambda = seq(-2, 2, by=0.1))
@@ -52,17 +62,12 @@ title(main = "95% CI for the Box-Cox transform.")
 data$charges <- log(data$charges)
 ```
 
-```{r data_split}
-set.seed(423)
+## Fit Full Model
 
-df_shuffled <- data[sample(nrow(data)), ]
+## Divide the dataset to smoker and non-smoker
 
-n_total <- nrow(df_shuffled)
-n_train <- floor(0.8 * n_total)
 
-train_set <- df_shuffled[1:n_train, ]
-test_set <- df_shuffled[(n_train + 1):n_total, ]
-```
+# Method
 
 
 ```{r}
