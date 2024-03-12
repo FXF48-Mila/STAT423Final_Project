@@ -94,6 +94,7 @@ datasmoker <- datasmoker %>% dplyr::select(-smoker)
 bc_transform <- boxcox(charges ~ ., data = datasmoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Train Smoker Box-Cox transform.")
 lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
+lambda_optimal <- 0.5
 datasmoker$charges <- (datasmoker$charges^lambda_optimal - 1) / lambda_optimal
 
 test_smoker <- test_set1 %>% filter(smoker == "yes")
@@ -101,17 +102,21 @@ test_smoker <- test_smoker %>% dplyr::select(-smoker)
 bc_transform <- boxcox(charges ~ ., data = test_smoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Test Smoker Box-Cox transform.")
 lambda_optimal <- bc_transform$x[which.max(bc_transform$y)]
+lambda_optimal <- 0.5
 test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
 
 datanosmoker <- train_set %>% filter(smoker == "no")
 datanosmoker <- datanosmoker %>% dplyr::select(-smoker)
 bc_transform <- boxcox(charges ~ ., data = datanosmoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Train Non-Smoker Box-Cox transform.")
+datanosmoker$charges <- log(datanosmoker$charges)
 
 test_nosmoker <- test_set1 %>% filter(smoker == "no")
 test_nosmoker <- test_nosmoker %>% dplyr::select(-smoker)
 bc_transform <- boxcox(charges ~ ., data = test_nosmoker, lambda = seq(-2, 2, by=0.1))
 title(main = "95% CI for the Test Non-Smoker Box-Cox transform.")
+test_nosmoker$charges <- log(test_nosmoker$charges)
+
 ```
 
 ```{r}
