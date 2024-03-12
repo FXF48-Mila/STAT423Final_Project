@@ -30,8 +30,8 @@ skimr::skim(data)
 
 ## Data Prepocessing
 ```{r}
-data <- data %>%
-  mutate(children = ifelse(children > 0, "have child", "no child"))
+# data <- data %>%
+#   mutate(children = ifelse(children > 0, "have child", "no child"))
 data$sex <- as.factor(data$sex)
 data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
@@ -266,15 +266,20 @@ variables.
 The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 350, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 350, the model's predictions tend to be lower, suggesting an underestimation.
 
 
+
+
+## Non-Smoker
+
+
 ```{r}
-data <- read.csv("Health_insurance.csv")
-data$sex <- as.factor(data$sex)
-data$smoker <- as.factor(data$smoker)
-data$region <- as.factor(data$region)
+# data <- read.csv("Health_insurance.csv")
+# data$sex <- as.factor(data$sex)
+# data$smoker <- as.factor(data$smoker)
+# data$region <- as.factor(data$region)
+# 
+# data$charges <- log(data$charges)
 
-data$charges <- log(data$charges)
-
-non_smoker_data <- filter(data, smoker == "no")
+non_smoker_data <- datanosmoker
 
 initial_model <- lm(charges ~ age + sex + bmi + children + region, data = non_smoker_data)
 
@@ -294,26 +299,38 @@ plot(initial_model,which=3)
 plot(initial_model,which=4)
 ```
 
-```{r}
-ggplot(data_with_small_residuals, aes(x = age, y = charges)) + 
-  geom_point() + 
-  labs(title = "Age vs Charges", x = "Age", y = "Charges") +
-  theme_minimal()
+As we can see from the graphs, the data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
+$$\hat\epsilon_i=Y_i-\hat Y_i=Y_i-\hat\beta_0-\hat\beta_1X_i.$$
+If we compare the residuals to $\hat{\epsilon}_i$ in the regression model:
+$$\hat{Y}_i = \beta_0 + \beta_1X_i + \epsilon_i \quad \Longleftrightarrow \quad \epsilon_i = Y_i - \beta_0 - \beta_1X_i.$$
+Essentially, each $e_i$ mimics the role of $\hat{\epsilon}_i$ when the fitted coefficients $\hat{\beta}_0, \hat{\beta}_1$ are close to $\beta_0, \beta_1$. Therefore, we would consider to use $\hat\epsilon_i$ of the linear model to capture the distance of the data point to the assumed model and therefore only keep data that are not outliers. In this case we choose 80% quantile of the empirical residuals that 
+$$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$$
+To visualize these data point, we can draw following graphs:
 
+```{r}
 ggplot(non_smoker_data, aes(x = age, y = charges)) + 
   geom_point() + 
-  labs(title = "Age vs Charges", x = "Age", y = "Charges") +
+  labs(title = "Original Age vs Charges", x = "Age", y = "Charges") +
+  theme_minimal()
+
+ggplot(data_with_small_residuals, aes(x = age, y = charges)) + 
+  geom_point() + 
+  labs(title = "Extracted Age vs Charges", x = "Age", y = "Charges") +
   theme_minimal()
 
 ggplot(data_outliers, aes(x = age, y = charges)) + 
   geom_point() + 
-  labs(title = "Age vs Charges", x = "Age", y = "Charges") +
+  labs(title = "Age vs Charges Outliers", x = "Age", y = "Charges") +
   theme_minimal()
 ```
 
+Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. Therefore, the linear regression model would be:
+
 ```{r}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
+summary(new_model)
 ```
+As we can see from the table given from `lm()` function, all the factors except BMI are significant. 
 
 ```{r}
 par(mfrow=c(2, 2))
@@ -341,7 +358,7 @@ plot(model2,which=4)
 ```
 
 ```{r}
-non_smoker_data <- filter(data, smoker == "no")
+# non_smoker_data <- filter(data, smoker == "no")
 
 initial_model <- lm(charges ~ age + sex + bmi + children + region, data = non_smoker_data)
 
@@ -421,7 +438,7 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
 print(p)
 ```
 
- The plot shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors regionnorthwest, regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model.
+The plot shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors regionnorthwest, regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
 
 
 ```{r}
@@ -439,31 +456,14 @@ predict_charges <- function(new_data) {
     beta_age * new_data$age +
     beta_sex_male * as.numeric(new_data$sex == 'male') +
     beta_bmi * new_data$bmi +
-    beta_children * new_data$children +
+    beta_children * new_data$children  +
     beta_region_northwest * as.numeric(new_data$region == 'northwest') +
     beta_region_southeast * as.numeric(new_data$region == 'southeast') +
     beta_region_northeast * as.numeric(new_data$region == 'northeast')
 }
 ```
 
-
 ```{r}
-data_for_plot2 <- data.frame(
-  Actual = test_set$charges,
-  LR_Predicted = predict_charges(test_set)
-  ) %>% 
-  pivot_longer(cols = everything(), names_to = "Model", values_to = "Predicted")
-
-ggplot(data_for_plot2, aes(x = Predicted, fill = Model)) +
-  geom_density(alpha = 0.5) +
-  labs(title = "Density Plot of Predicted Charges of Testset",
-       x = "Predicted Charges",
-       y = "Density") +
-  theme_minimal()
-```
-
-```{r}
-test_smoker <- test_set %>% filter(smoker == "yes")
 data_for_plot <- data.frame(
   Actual = test_set$charges,
   LR_Predicted = predict_charges(test_set)
@@ -479,5 +479,5 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   theme_minimal()
 ```
 
- The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
 
+The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
