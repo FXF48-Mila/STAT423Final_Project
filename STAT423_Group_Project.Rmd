@@ -214,20 +214,6 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 The scatterplot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the black line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are significant deviations from this line, indicating some degree of prediction error. Prior to the actual charges reaching 10, the model seems to predict values that are higher than the actual figures, indicating an overestimation. Conversely, after the actual charges surpass 10, the model's predictions tend to be lower, suggesting an underestimation.
 
 
-```{r}
-data_for_plot2 <- data.frame(
-  Actual = test_smoker$charges,
-  LR_Selected_Predicted = predict(fit_choice, newdata = test_smoker)
-  ) %>% 
-  pivot_longer(cols = everything(), names_to = "Model", values_to = "Predicted")
-
-ggplot(data_for_plot2, aes(x = Predicted, fill = Model)) +
-  geom_density(alpha = 0.5) +
-  labs(title = "Density Plot of Predicted Charges of Testset",
-       x = "Predicted Charges",
-       y = "Density") +
-  theme_minimal()
-```
 ######################################################################################
 
 
