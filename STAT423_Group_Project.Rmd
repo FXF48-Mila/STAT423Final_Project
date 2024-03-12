@@ -594,7 +594,7 @@ ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 ```
 
 
-The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by pink dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. However, for actual charges between 7.5 and 8, the model appears to overpredict, indicated by the points lying above the dashed line. As the actual charges rise from 8 to 9, the model seems to underpredict, with points lying below the dashed line. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
+The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by red dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
 
 # Discussion
 
