@@ -315,7 +315,7 @@ The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Inf
 
 ### Analysis of the selected linear model
 
-For the selected model $\sqrt{charges}=42.8299+8.1623bmi+1.5053age-1.8190sex$:
+For the selected model with predictors bmi, age, and sex:
 
 Here, the intercept is not worthy for explaination because it suggests that when both BMI and age are zero, the square root of charges for female is expected to be approximately 42.8299 and for male is expected to be 41.0109. However, no one will have a bmi or age of zero.
 
