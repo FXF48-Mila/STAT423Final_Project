@@ -140,11 +140,11 @@ par(mfrow = c(1, 1))
 
 # Create the ggplot2 plots
 p1 <- ggplot(data = train_set1, aes(x = age, y = charges, color = smoker)) +
-  geom_point() +
+  geom_point(size = 0.8) +
   labs(title = "Scatterplot of charges vs. age", x = "age", y = "charges")
 
 p2 <- ggplot(data = train_set1, aes(x = bmi, y = charges, color = smoker)) +
-  geom_point() +
+  geom_point(size = 0.8) +
   labs(title = "Scatterplot of charges vs. bmi", x = "bmi", y = "charges")
 
 # Arrange ggplot2 plots using ggarrange
@@ -165,7 +165,7 @@ plot(train_set1)
 ```
 
 
-```{r, boxcox, include = FALSE}
+```{r, label="boxcox", include = FALSE, cache = TRUE}
 par(mfrow = c(2, 3), oma = c(3, 0, 0, 0))
 
 datanosmoker <- train_set1 %>% filter(smoker == "no")
@@ -292,7 +292,7 @@ print(best_model_BIC$value)
 library(knitr)
 
 table_data <- data.frame(
-  "Mallow's Cp" = 1161.372,
+  "Mallows_Cp" = 1161.372,
   AIC = 2139.16,
   BIC = 2156.036
 )
@@ -307,8 +307,7 @@ For the selected model $\sqrt{charges}=42.8299+8.1623bmi+1.5053age-1.8190sex$:
 
 Here, the intercept is not worthy for explaination because it suggests that when both BMI and age are zero, the square root of charges for female is expected to be approximately 42.8299 and for male is expected to be 41.0109. However, no one will have a bmi or age of zero.
 
-According to the summary, keeping other factors the same, for every one unit increase in bmi, the estimate of the average square root of charges increase 8.1623. For every one increase in age, the estimate of the average square root of charges increase 1.5053. Based on teh p-values, the significant predictors are `bmi` and `age`, which implies that the effect of age and bmi on the square root of charges are evident from the data.
-
+According to the summary, keeping other factors the same, for every one unit increase in bmi, the estimate of the average square root of charges increase 8.1623. For every one increase in age, the estimate of the average square root of charges increase 1.5053. Based on the p-values, the significant predictors are `bmi` and `age`, which implies that the effect of age and bmi on the square root of charges are evident from the data.
 
 The coefficient for sexmale is -1.8190, indicating that, keeping other factors the same, being male is associated with a decrease in the square root of charges of -1.8190 compared to being female. However, this effect is not statistically significant, as indicated by the p-value, which suggests that sex may not have a strong influence on the square root of charges within this model.
 
@@ -321,7 +320,7 @@ summary(fit_choice)
 
 ### Assumption Checks and Multicollinearity Checks
 
-The residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5 (we might think point 154 is a high leverage point, but its cook distance is still smaller than 0.5, meaning that it is not a serious point), there is no noticeable point with high cook’s distance and leverage.
+Though not perfectly scattered, the residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5 (we might think point 154 is a high leverage point, but its cook distance is still smaller than 0.5, meaning that it is not a serious point), there is no noticeable point with high cook’s distance and leverage.
 
 We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
 problem for this model. According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
@@ -351,13 +350,11 @@ kable(table_data,
       caption = "Variance Inflation Factor for Multicollinearity Analysis")
 ```
 ```{r, include = FALSE}
+print("Variance Inflation Factor for Multicollinearity Analysis:")
 vif(fit_choice)
 ```
 
-
 ### Prediction
-
-Figure 6 shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 ```{r fig.height=3, fig.width=5.4}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
@@ -380,8 +377,11 @@ plot + labs(caption = "Figure 6: Comparison of model predictions with actual val
   theme(plot.caption = element_text(face = "italic"))
 
 ```
+Figure 6 shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 ## Non-Smoker
+
+### Assumption Checks and Outliers Filtering 
 
 ```{r}
 # data <- read.csv("Health_insurance.csv")
@@ -418,13 +418,14 @@ mtext("Figure ", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
-As we can see from the graphs, the data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
+When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from the graphs, the data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
 $$\hat\epsilon_i=Y_i-\hat Y_i=Y_i-\hat\beta_0-\hat\beta_1X_i.$$
 If we compare the residuals to $\hat{\epsilon}_i$ in the regression model:
 $$\hat{Y}_i = \beta_0 + \beta_1X_i + \epsilon_i \quad \Longleftrightarrow \quad \epsilon_i = Y_i - \beta_0 - \beta_1X_i.$$
-Essentially, each $e_i$ mimics the role of $\hat{\epsilon}_i$ when the fitted coefficients $\hat{\beta}_0, \hat{\beta}_1$ are close to $\beta_0, \beta_1$. Therefore, we would consider to use $\hat\epsilon_i$ of the linear model to capture the distance of the data point to the assumed model and therefore only keep data that are not outliers. In this case we choose 80% quantile of the empirical residuals that 
-$$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$$
-To visualize these data point, we can draw following graphs:
+Essentially, each $e_i$ mimics the role of $\hat{\epsilon}_i$ when the fitted coefficients $\hat{\beta}_0, \hat{\beta}_1$ are close to $\beta_0, \beta_1$. Therefore, we would consider to use $\hat\epsilon_i$ of the linear model to capture the distance of the data point to the assumed model and therefore only keep data that are not outliers. In this case we choose 85% quantile of the empirical residuals that 
+$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$
+
+The following graph shows the extraction of the data point and the outliers:
 
 ```{r fig.height=3, fig.width=9}
 library(ggpubr)
@@ -461,15 +462,13 @@ caption <- textGrob(label = "Figure 8", x = 0.5, y = 0.99, just = "center", gp =
 grid.arrange(plot, caption, heights = c(5, 1))
 ```
 
-
-Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
+Taking the 85% quantile as a threshold cannot yields those exact outliers in the dataset, but that's what we want because we're not aiming to fit a perfect model in the training dataset, but in the unseen testing dataset. Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
 
 ```{r}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
 summary(new_model)
 ```
-As we can see from the table given from `lm()` function, all the factors except BMI are significant. 
-
+We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. 
 
 ```{r fig.height=2.9, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
@@ -485,52 +484,36 @@ mtext("Figure 9", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-
-
 From the Residuals vs. Fitted Values plot, the points are approximately centered around the line y=0, so mean zero assumption is possible to appear to hold. The variability of the points on below the line y=0 is larger than that of the points above the line y=0 on both tails, which indicates that the variance is not constant, so the constant variance assumption does not appear to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the spread of residuals, meaning the errors have non-constant variance. Lastly, the "Cook's distance" plot identifies observations 609, 285, and 713 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
+
+## Residual Bootstrap
 
 To improve our model performance and better satisfy our model assumption, we would consider to use residual bootstrap \footnote{(@Chen2017)}.
 
-The residual bootstrap first generates IID
-$$
-\hat{\epsilon}_1^*, \ldots, \hat{\epsilon}_n^*
-$$
-such that for each $\hat{\epsilon}_i^*$,
+The residual bootstrap first generates IID $\hat{\epsilon}_1^*, \ldots, \hat{\epsilon}_n^*$ such that for each $\hat{\epsilon}_i^*$,
 $$
 P(\hat{\epsilon}_i^* = \hat\epsilon_i) = \frac{1}{n}, \quad \forall n = 1, \ldots, n.
 $$
-And then generates a new bootstrap sample
-$$
-(X_1^*, Y_1^*), \ldots, (X_n^*, Y_n^*)
-$$
-via
-$$
-X_i^* = X_i, \quad Y_i^* = \hat{\beta}_0 + \hat{\beta}_1X_i + \hat{\epsilon}_i^*.
-$$
+And then generates a new bootstrap sample $(X_1^*, Y_1^*), \ldots, (X_n^*, Y_n^*)$ via $X_i^* = X_i, \quad Y_i^* = \hat{\beta}_0 + \hat{\beta}_1X_i + \hat{\epsilon}_i^*.$
+
 Namely, we fixed the covariate $X_i$ but generate a new value of $Y_i$ using the fitted regression function and the `noise' from sampling the residuals with replacement.
 
-Now we would repeat the process  B times, we would have
-
+Now we would repeat the process  B times, we would have:
 \begin{align*}
 & (X_1^{*(1)}, Y_1^{*(1)}), \ldots, (X_n^{*(1)}, Y_n^{*(1)}) \\
 & (X_1^{*(2)}, Y_1^{*(2)}), \ldots, (X_n^{*(2)}, Y_n^{*(2)}) \\
 & \vdots \\
 & (X_1^{*(B)}, Y_1^{*(B)}), \ldots, (X_n^{*(B)}, Y_n^{*(B)}).
 \end{align*}
-
 For each bootstrap sample, say $(X_1^{*(\ell)}, Y_1^{*(\ell)}), \ldots, (X_n^{*(\ell)}, Y_n^{*(\ell)})$, we fit the linear regression, leading to a bootstrap estimate of the fitted coefficients $\hat{\beta}_0^{*(\ell)}, \hat{\beta}_1^{*(\ell)}$. Thus, the $B$ bootstrap samples leads to $B$ sets of fitted coefficients. We then estimate the variance by
-
 \begin{align*}
 \widehat{\text{Var}}(\hat{\beta}_0) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_0^{*(\ell)} - \bar{\hat{\beta}}_0)^2, & \bar{\hat{\beta}}_0 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_0^{*(\ell)}, \\
 \widehat{\text{Var}}(\hat{\beta}_1) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_1^{*(\ell)} - \bar{\hat{\beta}}_1)^2, & \bar{\hat{\beta}}_1 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_1^{*(\ell)}, \\
 \end{align*}
-
 Thus, we would construct our confidence interval by:
-
 $$
 \text{C.I.}(\hat{\beta}_0) = \hat{\beta}_0 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\text{Var}}(\hat{\beta}_0)},
 $$
-
 $$
 \text{C.I.}(\hat{\beta}_1) = \hat{\beta}_1 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\text{Var}}(\hat{\beta}_1)}.
 $$
@@ -545,7 +528,6 @@ model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
 ```
 
 From the Residuals vs. Fitted Values plot below, the points are centered around the line y=0, so mean zero assumption is possible to appear to hold. the variability of residuals is consistent across all fitted values, which indicates that the variance is constant, so the constant variance assumption appears to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the constant spread of residuals, meaning the errors have constant variance. Lastly, the "Cook's distance" plot identifies observations 342, 417, and 554 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
-
 
 ```{r fig.height=2.9, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
@@ -562,7 +544,7 @@ mtext("Figure 10", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
-```{r}
+```{r, include = FALSE}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = datanosmoker)
 
 set.seed(423)
@@ -621,15 +603,13 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
   labs(x = "Term", y = "Estimate", title = "Confidence Intervals for Model Coefficients") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-p + labs(caption = "Figure 11: Confidence Intervals for Model Coefficients") +
-  theme(plot.caption = element_text(face = "italic"))
+p <- p + labs(caption = "Figure 11: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic"))
 ```
 
 
 The result is slightly inconsistent with the linear model using `lm()` directly. This might because the standardized residuals are still not constant across fitted values and therefore might including some violations. Bootstrap methods can overcome this situation by resampling from residuals.
 
-For predictions, we would consider in the test set that we still use the 80% quantile of the empirical residuals from the initial regression model in the training set as the threshold to judge if the given data is outlier or not. That is to say,
-$$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon_{train}}\}.$$
+For predictions, we would consider in the test set that we still use the 85% quantile of the empirical residuals from the initial regression model in the training set as the threshold to judge if the given data is outlier or not. That is to say, $\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon_{train}}\}.$
 
 ```{r}
 # non_smoker_data <- filter(data, smoker == "no")
@@ -664,7 +644,7 @@ predict_charges <- function(new_data) {
 }
 ```
 
-```{r fig.height=2.7, fig.width=5}
+```{r fig.height=3, fig.width=8}
 data_for_plot <- data.frame(
   Actual = data_test$charges,
   LR_Predicted = predict_charges(data_test)
@@ -679,23 +659,33 @@ plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
        y = "Predicted Charges") +
   theme_minimal()
 
-plot + labs(caption = "Figure 12: Comparison of model predictions with actual values") +
+plot <- plot + labs(caption = "Figure 12: Comparison of model predictions with actual values") +
   theme(plot.caption = element_text(face = "italic"))
+combined_plot <- grid.arrange(p, plot, ncol = 2)
 ```
 
 The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by red dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
 
+# Conclusion
+
+From the above analysis, for the smokers, the result showed that bmi and age are strong predictor of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges and it performs well for the testing daatset. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, and region are statistically significant predictors, while bmi is not statistically significant predictors. Using the 85% quantile of the empirical residuals in the model, it appears to predict the charges well. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
+
 # Discussion
 
-From the above analysis, for the smokers, the result showed that bmi is a strong predictor of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, regionsoutheast and regionsouthwest are statistically significant predictors, while bmi and regionnorthwest are not statistically significant predictors. Using the 80% quantile of the empirical residuals in the model, it appears to predict the charges well. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
-Based on what we learned from this research, we should use more advanced predictive modelling methods and keep improving the models to better reflect how healthcare use and prices change over time. The clear effect that smoking has on insurance rates shows how important it is to have custom models that take living factors into account. As health care needs and insurance policies change, it will be important to use machine learning algorithms and keep models up to date with new data to make predictions more accurate and make sure they stay relevant to current trends.
+This is truly a hard dataset for linear regression analysis because: 1) most of the explanatory variables in the dataset are categorical or ordinal; 2) The dataset contains a lot of outliers that cannot be separated easily by its existing explanatory variables, suggesting that we might need more information for the person (especially the person's medical history) to do a more accurate prediction. 
 
-# Reference
+Based on what we learned from this research, we should consider more potentional effective factors on health insurance charges, use more advanced predictive modelling methods, and keep improving the models to better reflect how healthcare use and prices change over time. The clear effect that smoking has on insurance rates shows how important it is to have custom models that take living factors into account. As health care needs and insurance policies change, it will be important to use machine learning algorithms and keep models up to date with new data to make predictions more accurate and make sure they stay relevant to current trends.
 
-Health Insurance dataset. (2020, December 18). https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data
+\newpage 
 
-K. Bhatia, S. S. Gill, N. Kamboj, M. Kumar and R. K. Bhatia, "Health Insurance Cost Prediction using Machine Learning," 2022 3rd International Conference for Emerging Technology (INCET), Belgaum, India, 2022, pp. 1-5, doi: 10.1109/INCET54531.2022.9824201. keywords: {COVID-19;Pediatrics;Obesity;Costs;Correlation;Pandemics;Linear regression;Health Insurance;Cost Prediction;Machine learning;Regression},
+# References
 
-ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. PR Newswire: press release distribution, targeting, monitoring and marketing. https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html#:~:text=After%20a%200.67%25%20increase%20in,for%20healthcare%20providers%20and%20insurers 
+- Bhatia, K., Gill, S. S., Kamboj, N., Kumar, M., & Bhatia, R. K. (2022). Health Insurance Cost Prediction using Machine Learning. In *2022 3rd International Conference for Emerging Technology (INCET)* (pp. 1-5). Belgaum, India. doi: [10.1109/INCET54531.2022.9824201](https://doi.org/10.1109/INCET54531.2022.9824201)
 
-Chen, Y. (n.d.). Lecture 6: Bootstrap for regression https://faculty.washington.edu/yenchic/17Sp_403/Lec6-bootstrap_reg.pdf 
+- Chen, Y. (n.d.). Lecture 6: Bootstrap for regression. [https://faculty.washington.edu/yenchic/17Sp_403/Lec6-bootstrap_reg.pdf](https://faculty.washington.edu/yenchic/17Sp_403/Lec6-bootstrap_reg.pdf)
+
+- Health Insurance dataset. (2020, December 18). [https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data](https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data)
+
+- ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. *PR Newswire: press release distribution, targeting, monitoring and marketing*. [https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html](https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html)
+
+
