@@ -32,13 +32,13 @@ library(cowplot)
 
 # Introduction
 
-Health insurance plays a crucial role in safeguarding individuals and families against the financial burdens associated with healthcare expenses. Especially after Covid-19, "health insurance has become one of the most prominent areas of research." \footnote{(Health Insurance Cost Prediction Using Machine Learning, n.d.)} As medical costs continue to rise and healthcare needs evolve, health insurance charges also increase gradually, after a 4% increase in health insurance in 2023, "American families will face another 4% increase in the cost of private health insurance." \footnote{(ValuePenguin, 2023)} People can't help asking after reading these exposures — How do health insurance charges? What factors affect my health insurance charges? Can I predict next year's charges?
+Health insurance plays a crucial role in safeguarding individuals and families against the financial burdens associated with healthcare expenses. Especially after Covid-19, "health insurance has become one of the most prominent areas of research." \footnote{(Health Insurance Cost Prediction Using Machine Learning, n.d.)} As medical costs continue to rise and healthcare needs evolve, health insurance charges also increase gradually, after a 4% increase in health insurance in 2023, "American families will face another 4% increase in the cost of private health insurance." \footnote{(ValuePenguin, 2023)} People can't help asking after reading these exposures — What are the key factors that affect the health insurance charges? Can I predict next year's charges? How good/credible are these predictive models?
 
-This report sets out on an exploratory voyage in an effort to solve the mystery surrounding health insurance charges and then give forecast models. The rest of the report is divided into data description, models, results analysis, and conclusions. Through these sections, this report aims to shed light on the complex interplay of factors that have contributed to health insurance charges. By delving into these topics, we aim to unravel the factors that influence insurance charges and to fit the linear regression models capable of accurately predicting health insurance charges.
+This report sets out on an exploratory voyage in an effort to solve the mystery surrounding health insurance charges and then give prediction models on the charges. The rest of the report is divided into data description, models, results analysis, and conclusions. By delving into these topics, we aim to unravel the factors that influence insurance charges and to fit the regression models capable of accurately predicting health insurance charges.
 
 # Data
-## About The Data
 
+## About The Data
 ```{r}
 data <- read.csv("Health_insurance.csv")
 ```
@@ -50,17 +50,15 @@ head(data)
 
 The dataset is collected by Kaggle. \footnote{(Health Insurance Dataset, 2020)} The dataset contains 1338 observations across 7 columns of customer personal information: age, sex(female or male), bmi(body mass index), children(the number of children), smoker(yes or no), regions(customers’ residential area), and charges (insurance charge bill).  Specifically, there are 3 character columns: `sex`, `smoker`, `region`, and 4 numeric columns: `age`, `children`, `bmi`, and `charges`, providing a comprehensive foundation for analysis and exploration of health insurance-related factors.
 
-## Data Prepocessing
+## Initial Data Prepocessing and Spliting
 
 ```{r}
 data$sex <- as.factor(data$sex)
 data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 ```
+To address the issue of having multiple intercepts due to the presence of categorical variables in regression analysis, we change `sex`, `smoker`, and `region` into factors in R. To facilitate the development and evaluation of predictive models, we divided the dataset into 80% training and 20% testing (validation) subsets. 
 
-In order to address the issue of having multiple intercepts due to the presence of categorical variables in regression analysis, we change `sex`, `smoker`, and `region` into factors in R. 
-
-## Data Split 
 ```{r data_split_brefore_transformation}
 set.seed(423)
 
@@ -73,11 +71,22 @@ train_set1 <- df_shuffled[1:n_train, ]
 test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 ```
 
-In order to facilitate the development and evaluation of predictive models, we divided the dataset into 80% training and 20% testing subsets. The training set, comprising 80% of the data, used to construct and refine our models in the following sections.
+## Data Processing for the Alternative Solution
 
-## Initial Thought: Full Regression Model, Data Processing -- Log Transformation
+We realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we transformed the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis. After the box-cox analysis, we chose to do a square root transformation to the charges for smoker dataset and a log transformation to the charges for non-smoker dataset (See the plot in Appendix).
+ 
+### Smoker
 
-```{r fig.height=2, fig.width=9}
+The potential issue regarding the dataset is the variable representing the number of children. To be more specific, the dataset tends to be a higher frequency of individuals with fewer children (0, 1, or 2) compared to those with a larger number of children (3, 4, or 5). This can lead to imbalanced data distribution and potentially affect the accuracy of statistical analyses, such as regression modeling.
+
+In order to address this issue and ensure a more balanced representation of the data, we transform the numerical variable representing the number of children into a categorical variable with distinct groups: "no child," and "have child." This categorization helps to address the potential skewness in the data distribution and improves the interpretability of regression analysis results.
+
+### Non-Smoker
+
+Since the non-smoker uses the bootstrap method which would be introduced below, it is robotic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
+
+# Model for the Initial Thought: One Full Regression Model
+```{r fig.height=3, fig.width=9}
 par(mfrow = c(1, 3), oma = c(3, 0, 0, 0))
 hist(train_set1$charges, xlab = "Health Insurance Charges", main = "Histogram for Health Insurance Charges")
 
@@ -87,49 +96,45 @@ title(main = "95% CI for the Box-Cox Transform")
 log_charges <- log(train_set1$charges)
 hist(log_charges, xlab = "Log Health Insurance Charges", main = "Histogram for Log Health Insurance Charges")
 
-mtext("Figure 1: Log Transformation on Health Insurance Charges", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+mtext("Figure 1: Log Transformation on Health Insurance Charges", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 Our initial thought for this analysis is to find the best fitted linear regression model for the entire dataset. Before fitting the full regression model, we see the distribution of Health Insurance Charges is very right skewed (Figure 1, first plot). In order to fit the full regression model, we need a Box-Cox transformation. Here, we take $\lambda=0$ and apply a log transformation to the charges (Figure 1, second plot). We can see that the  distribution of Health Insurance Charges after log transformation is normal. 
 
+## Assumption Checks and Multicollinearity Checks
 
-### Fit Full Models and Assumption Checks
-
+Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges. We need to check the assumption for our initial model first.
 ```{r}
 fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data = train_set1)
 #summary(fit.full)
 ```
 
+```{r fig.height=2.9, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
 
-```{r fig.height=4, fig.width=5.2}
-# Set up the layout for the base R plots
-par(mfrow = c(2, 2))
-
-# Create the base R plots and save them in a list
 plot_list <- list()
 plot_list[[1]] <- plot(fit.full, which = 1)
 plot_list[[2]] <- plot(fit.full, which = 2)
 plot_list[[3]] <- plot(fit.full, which = 3)
 plot_list[[4]] <- plot(fit.full, which = 5)
 
-mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+In the residual vs. fitted plot, the points are not randomly around the horizontal line at zero. We can clearly see some trend in the TA plot, suggesting that the linearity assumption is violated. Since we transformed the response variable, we use the standard residuals vs. fitted plot to check the homoscedasticity. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the Q-Q residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5, there is no noticeable point with leverage.
 
+Therefore, we can see that almost every assumption is violated even though the explanatory variables are normal distributed.
 
-Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges. We need to check the assumption for our initial model first.
+Since this model does not conform to the assumptions of linear regression, if we continue to use this model for our analysis, our results will be inaccurate. To ensure the reliability of the models that we made, we need to do a some analysis.
 
-In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
+## Solution - Further Spliting the Dataset into Smokers and Nonsmokers
 
-Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
-
-We can clearly see that there exist two regression lines in Figure 3 for `age` and `charges`.
-
-```{r fig.height=3, fig.width=9}
+Based on Figure 3, we can see that charges has many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make more accurate analysis.
+```{r fig.height=3, fig.width=7}
 # Reset the plotting layout to the default
 par(mfrow = c(1, 1))
 
@@ -159,21 +164,8 @@ plot_with_caption
 plot(train_set1)
 ```
 
-## Alternative Thought: Split The Dataset Based on Smoke Status
 
-Based on all the observations above, smoking status may have a significant impact on insurance charges. Therefore, we decided to split the dataset into smoker and nonsmoker groups to facilitate more accurate predictions. However, we realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we are going to transform the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis.
- 
-### Smoker
-
-The potential issue regarding the dataset is the variable representing the number of children. To be more specific, the dataset tends to be a higher frequency of individuals with fewer children (0, 1, or 2) compared to those with a larger number of children (3, 4, or 5). This can lead to imbalanced data distribution and potentially affect the accuracy of statistical analyses, such as regression modeling.
-
-In order to address this issue and ensure a more balanced representation of the data, we transform the numerical variable representing the number of children into a categorical variable with distinct groups: "no child," and "have child." This categorization helps to address the potential skewness in the data distribution and improves the interpretability of regression analysis results.
-
-### Non-Smoker
-
-Since the non-smoker uses the bootstrap method which would be introduced below, it is rubustic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
-
-```{r, boxcox}
+```{r, boxcox, include = FALSE}
 par(mfrow = c(2, 3), oma = c(3, 0, 0, 0))
 
 datanosmoker <- train_set1 %>% filter(smoker == "no")
@@ -225,9 +217,9 @@ par(mfrow = c(1, 1), oma = c(0, 0, 0,0))
 
 ```
 
-# Method
+# Models for the Alternative Thought: Split The Dataset Based on Smoke Status
 
-## Smoker
+## Model for Smoker
 
 ### Model Selection
 
@@ -307,11 +299,11 @@ table_data <- data.frame(
 kable(table_data, caption = "Model selection criteria")
 ```
 
-The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being included. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in Table 1.
+The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being selected. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in Table 1.
 
 ### Analysis of the selected linear model
 
-For the selected model $\sqrt{charges}=42.8299+8.1623bmi+1.5053age-1.8190sex$.
+For the selected model $\sqrt{charges}=42.8299+8.1623bmi+1.5053age-1.8190sex$:
 
 Here, the intercept is not worthy for explaination because it suggests that when both BMI and age are zero, the square root of charges for female is expected to be approximately 42.8299 and for male is expected to be 41.0109. However, no one will have a bmi or age of zero.
 
@@ -327,15 +319,14 @@ fit_choice <- lm(formula = charges ~ bmi + age + sex, data = datasmoker)
 summary(fit_choice)
 ```
 
-### Assumption Checks
+### Assumption Checks and Multicollinearity Checks
 
 The residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5 (we might think point 154 is a high leverage point, but its cook distance is still smaller than 0.5, meaning that it is not a serious point), there is no noticeable point with high cook’s distance and leverage.
 
 We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
 problem for this model. According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
-
-```{r fig.height=4, fig.width=5.2}
-par(mfrow=c(2, 2))
+```{r fig.height=2.9, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
 
 plot_list <- list()
 plot_list[[1]] <- plot(fit_choice, which = 1)
@@ -343,13 +334,23 @@ plot_list[[2]] <- plot(fit_choice, which = 2)
 plot_list[[3]] <- plot(fit_choice, which = 3)
 plot_list[[4]] <- plot(fit_choice, which = 5)
 
-mtext("Figure 5", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+mtext("Figure 5", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-
 ```{r}
+library(knitr)
+
+table_data <- data.frame(
+  "bmi" = 1.028692,
+  "age" = 1.013127,
+  "sexmale" = 1.015946
+)
+kable(table_data, 
+      caption = "Variance Inflation Factor for Multicollinearity Analysis")
+```
+```{r, include = FALSE}
 vif(fit_choice)
 ```
 
@@ -402,12 +403,19 @@ data_with_small_residuals <- non_smoker_data[abs(residuals) <= threshold, ]
 data_outliers <- non_smoker_data[abs(residuals) > threshold, ]
 ```
 
-```{r fig.height=4, fig.width=5.2}
-par(mfrow=c(2, 2))
-plot(initial_model,which=1)
-plot(initial_model,which=2)
-plot(initial_model,which=3)
-plot(initial_model,which=4)
+```{r fig.height=2.9, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+
+plot_list <- list()
+plot_list[[1]] <- plot(initial_model, which = 1)
+plot_list[[2]] <- plot(initial_model, which = 2)
+plot_list[[3]] <- plot(initial_model, which = 3)
+plot_list[[4]] <- plot(initial_model, which = 5)
+
+mtext("Figure ", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+
+# Reset to default parameters
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
 As we can see from the graphs, the data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
@@ -418,25 +426,25 @@ Essentially, each $e_i$ mimics the role of $\hat{\epsilon}_i$ when the fitted co
 $$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$$
 To visualize these data point, we can draw following graphs:
 
-```{r}
+```{r fig.height=3, fig.width=9}
 library(ggpubr)
 library(gridExtra)
 library(grid)
 
 p1 <- ggplot(non_smoker_data, aes(x = age, y = charges)) + 
-  geom_point() + 
+  geom_point(size = 0.7) + 
   labs(title = "Original Age vs Charges", x = "Age", y = "Charges") +
   theme_minimal() +
   theme(plot.title = element_text(size = 10)) 
 
 p2 <- ggplot(data_with_small_residuals, aes(x = age, y = charges)) + 
-  geom_point() + 
+  geom_point(size = 0.7) + 
   labs(title = "Extracted Age vs Charges", x = "Age", y = "Charges") +
   theme_minimal() +
   theme(plot.title = element_text(size = 10)) 
 
 p3 <- ggplot(data_outliers, aes(x = age, y = charges)) + 
-  geom_point() + 
+  geom_point(size = 0.7) + 
   labs(title = "Age vs Charges Outliers", x = "Age", y = "Charges") +
   theme_minimal() +
   theme(plot.title = element_text(size = 10)) 
@@ -448,10 +456,11 @@ p3 <- p3 + theme(aspect.ratio = 0.8)
 plot <- ggarrange(p1, p2, p3, nrow = 1)
 
 # Add a text grob for the caption
-caption <- textGrob(label = "Figure 8", x = 0.5, y = 0.99, just = "center", gp = gpar(fontsize = 9, fontface = 'italic'))
+caption <- textGrob(label = "Figure 8", x = 0.5, y = 0.99, just = "center", gp = gpar(fontsize = 10, fontface = 'italic'))
 
-grid.arrange(plot, caption)
+grid.arrange(plot, caption, heights = c(5, 1))
 ```
+
 
 Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
 
@@ -461,14 +470,22 @@ summary(new_model)
 ```
 As we can see from the table given from `lm()` function, all the factors except BMI are significant. 
 
-```{r fig.height=4, fig.width=5.2}
-par(mfrow=c(2, 2))
-plot(new_model,which=1)
-plot(new_model,which=2)
-plot(new_model,which=3)
-plot(new_model,which=4)
-# Figure 9
+
+```{r fig.height=2.9, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+
+plot_list <- list()
+plot_list[[1]] <- plot(new_model, which = 1)
+plot_list[[2]] <- plot(new_model, which = 2)
+plot_list[[3]] <- plot(new_model, which = 3)
+plot_list[[4]] <- plot(new_model, which = 5)
+
+mtext("Figure 9", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+
+# Reset to default parameters
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+
 
 From the Residuals vs. Fitted Values plot, the points are approximately centered around the line y=0, so mean zero assumption is possible to appear to hold. The variability of the points on below the line y=0 is larger than that of the points above the line y=0 on both tails, which indicates that the variance is not constant, so the constant variance assumption does not appear to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the spread of residuals, meaning the errors have non-constant variance. Lastly, the "Cook's distance" plot identifies observations 609, 285, and 713 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
 
@@ -529,15 +546,21 @@ model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
 
 From the Residuals vs. Fitted Values plot below, the points are centered around the line y=0, so mean zero assumption is possible to appear to hold. the variability of residuals is consistent across all fitted values, which indicates that the variance is constant, so the constant variance assumption appears to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the constant spread of residuals, meaning the errors have constant variance. Lastly, the "Cook's distance" plot identifies observations 342, 417, and 554 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
 
-```{r fig.height=4, fig.width=5.2}
-par(mfrow=c(2, 2))
-plot(model2,which=1)
-plot(model2,which=2)
-plot(model2,which=3)
-plot(model2,which=4)
-# Figure 10
-```
 
+```{r fig.height=2.9, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+
+plot_list <- list()
+plot_list[[1]] <- plot(model2, which = 1)
+plot_list[[2]] <- plot(model2, which = 2)
+plot_list[[3]] <- plot(model2, which = 3)
+plot_list[[4]] <- plot(model2, which = 5)
+
+mtext("Figure 10", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+
+# Reset to default parameters
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
+```
 
 ```{r}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = datanosmoker)
