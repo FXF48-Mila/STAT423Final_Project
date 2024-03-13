@@ -73,7 +73,7 @@ test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 
 ## Data Processing for the Alternative Solution
 
-We realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we transformed the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis. After the box-cox analysis, we chose to do a square root transformation to the charges for smoker dataset and a log transformation to the charges for non-smoker dataset (See the plot in Appendix).
+We realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we transformed the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis. After the box-cox analysis, we chose to do a square root transformation to the charges for smoker dataset and a log transformation to the charges for non-smoker dataset.
  
 ### Smoker
 
@@ -105,14 +105,23 @@ Our initial thought for this analysis is to find the best fitted linear regressi
 
 ## Assumption Checks and Multicollinearity Checks
 
-Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges. We need to check the assumption for our initial model first.
+In the following analysis, we will do several Assumption Checks and Multicollinearity Checks. To minimize repetitive analytical writing, we will use the list of conditions under which each assumptions holds and refer to them as Assumption 1, 2, 3, and (not) having serious Multicollinearity issue.
+
+- Check Assumption 1: linearity ($E[\epsilon_i] = 0$), using Residual vs. Fitted plot. Assumption holds if the points are randomly scattered around the horizontal line at zero.
+
+- Check Assumption 2: normality ($\epsilon_i \sim N(0, \sigma^2)$), using Q-Q Residuals plot. Assumption holds if the points are staying on the line. (That is, the ordered residuals correspond linearly with quantiles of a standard normal distribution.)
+
+- Check Assumption 3: homoscedasticity ($Var[\epsilon_i] = \sigma^2$), using Standard Residuals vs. Fitted plot since we transformed the response variable - charges. Assumption holds if the spread of points is constant across all values of the fitted values.
+
+- Check Multicollinearity: enable the precision of the coefficients, using Residuals vs. Leverage plot. Check holds if there isn't any point pass the 0.5 cook distance curve. 
+
 ```{r}
 fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data = train_set1)
 #summary(fit.full)
 ```
 
-```{r fig.height=2.9, fig.width=10}
-par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+```{r fig.height=2.7, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
 
 plot_list <- list()
 plot_list[[1]] <- plot(fit.full, which = 1)
@@ -125,9 +134,11 @@ mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-In the residual vs. fitted plot, the points are not randomly around the horizontal line at zero. We can clearly see some trend in the TA plot, suggesting that the linearity assumption is violated. Since we transformed the response variable, we use the standard residuals vs. fitted plot to check the homoscedasticity. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the Q-Q residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5, there is no noticeable point with leverage.
+Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges.
 
-Therefore, we can see that almost every assumption is violated even though the explanatory variables are normal distributed.
+According to the four plots, Assumption 1 is not satisfied, with clear trands in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue.
+
+Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normal distributed.
 
 Since this model does not conform to the assumptions of linear regression, if we continue to use this model for our analysis, our results will be inaccurate. To ensure the reliability of the models that we made, we need to do a some analysis.
 
@@ -141,11 +152,11 @@ par(mfrow = c(1, 1))
 # Create the ggplot2 plots
 p1 <- ggplot(data = train_set1, aes(x = age, y = charges, color = smoker)) +
   geom_point(size = 0.8) +
-  labs(title = "Scatterplot of charges vs. age", x = "age", y = "charges")
+  labs(title = "Scatterplot of Charges vs. Age", x = "age", y = "charges")
 
 p2 <- ggplot(data = train_set1, aes(x = bmi, y = charges, color = smoker)) +
   geom_point(size = 0.8) +
-  labs(title = "Scatterplot of charges vs. bmi", x = "bmi", y = "charges")
+  labs(title = "Scatterplot of Charges vs. Bmi", x = "bmi", y = "charges")
 
 # Arrange ggplot2 plots using ggarrange
 plots <- ggarrange(p1, p2, ncol = 2)
@@ -320,12 +331,13 @@ summary(fit_choice)
 
 ### Assumption Checks and Multicollinearity Checks
 
-Though not perfectly scattered, the residual vs. fitted plots imply the expected value of residuals is roughly 0. Since we did a square root transformation on the response variable, here, we use the standard residuals vs. fitted plot to check the homoscedasticity. Here, since the spread of the points in the plot remains relatively constant across the range of fitted values, then constant variance assumption is satisfied. The QQ plot seems to satisfy the normality assumption since the majority of the data points seem to lie reasonably close to the line, suggesting that the standardized residuals have a distribution that is close to normal. For the Residuals vs. Leverage plot, since there isn't any point with a cook distance greater than 0.5 (we might think point 154 is a high leverage point, but its cook distance is still smaller than 0.5, meaning that it is not a serious point), there is no noticeable point with high cook’s distance and leverage.
+According to the four plots, Assumption 1 is satisfied, though the points are not perfectly scattered. Assumption 2 is roughly satisfied with some exception of the points on the edges. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
 
 We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
-problem for this model. According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
-```{r fig.height=2.9, fig.width=10}
-par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+problem for this model. According to the Variance Inflation Factor (VIF) that we have calculated for the model, we can see that all of the VIF are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
+
+```{r fig.height=2.7, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
 
 plot_list <- list()
 plot_list[[1]] <- plot(fit_choice, which = 1)
@@ -338,7 +350,7 @@ mtext("Figure 5", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-```{r}
+```{r fig.height=3, fig.width=3}
 library(knitr)
 
 table_data <- data.frame(
@@ -347,7 +359,7 @@ table_data <- data.frame(
   "sexmale" = 1.015946
 )
 kable(table_data, 
-      caption = "Variance Inflation Factor for Multicollinearity Analysis")
+      caption = "VIF for Multicollinearity Analysis")
 ```
 ```{r, include = FALSE}
 print("Variance Inflation Factor for Multicollinearity Analysis:")
@@ -356,7 +368,7 @@ vif(fit_choice)
 
 ### Prediction
 
-```{r fig.height=3, fig.width=5.4}
+```{r fig.height=2.7, fig.width=4}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
 data_for_plot <- data.frame(
   Actual = test_smoker$charges,
@@ -368,15 +380,25 @@ data_for_plot <- data.frame(
 plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
-  labs(title = "Comparison of Model Predictions vs Actual Values in testset",
+  labs(title = "Model Predictions vs Actual Values in Testset",
        x = "Actual Charges",
        y = "Predicted Charges") +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    text = element_text(size = 8), # Adjusts all text elements
+    plot.title = element_text(size = 10), # Adjusts plot title
+    axis.title = element_text(size = 8), # Adjusts axis titles (x and y)
+    axis.text.x = element_text(size = 8), # Adjusts x axis text
+    axis.text.y = element_text(size = 8),
+    legend.position = c(0.55, 0), # Adjust these values as needed
+    legend.justification = c(0, 0),
+    legend.box.just = "left",
+    legend.background = element_rect(fill = "white")) # Adjusts y axis text
 
 plot + labs(caption = "Figure 6: Comparison of model predictions with actual values") +
   theme(plot.caption = element_text(face = "italic"))
-
 ```
+
 Figure 6 shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 ## Non-Smoker
@@ -403,8 +425,8 @@ data_with_small_residuals <- non_smoker_data[abs(residuals) <= threshold, ]
 data_outliers <- non_smoker_data[abs(residuals) > threshold, ]
 ```
 
-```{r fig.height=2.9, fig.width=10}
-par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+```{r fig.height=2.7, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
 
 plot_list <- list()
 plot_list[[1]] <- plot(initial_model, which = 1)
@@ -418,7 +440,7 @@ mtext("Figure ", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
-When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from the graphs, the data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
+When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from the graphs, no assumptions are satisfied. The data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
 $$\hat\epsilon_i=Y_i-\hat Y_i=Y_i-\hat\beta_0-\hat\beta_1X_i.$$
 If we compare the residuals to $\hat{\epsilon}_i$ in the regression model:
 $$\hat{Y}_i = \beta_0 + \beta_1X_i + \epsilon_i \quad \Longleftrightarrow \quad \epsilon_i = Y_i - \beta_0 - \beta_1X_i.$$
@@ -468,10 +490,10 @@ Taking the 85% quantile as a threshold cannot yields those exact outliers in the
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
 summary(new_model)
 ```
-We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. 
+We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. The R-squared value is 0.9793 and the adjusted R-squared value is 0.9791, which are quite high.
 
-```{r fig.height=2.9, fig.width=10}
-par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+```{r fig.height=2.7, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
 
 plot_list <- list()
 plot_list[[1]] <- plot(new_model, which = 1)
@@ -484,7 +506,7 @@ mtext("Figure 9", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-From the Residuals vs. Fitted Values plot, the points are approximately centered around the line y=0, so mean zero assumption is possible to appear to hold. The variability of the points on below the line y=0 is larger than that of the points above the line y=0 on both tails, which indicates that the variance is not constant, so the constant variance assumption does not appear to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the spread of residuals, meaning the errors have non-constant variance. Lastly, the "Cook's distance" plot identifies observations 609, 285, and 713 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
+According to the four plots, Assumption 1 not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
 
 ## Residual Bootstrap
 
@@ -498,25 +520,22 @@ And then generates a new bootstrap sample $(X_1^*, Y_1^*), \ldots, (X_n^*, Y_n^*
 
 Namely, we fixed the covariate $X_i$ but generate a new value of $Y_i$ using the fitted regression function and the `noise' from sampling the residuals with replacement.
 
-Now we would repeat the process  B times, we would have:
+Now we would repeat the process B times, we would have:
 \begin{align*}
 & (X_1^{*(1)}, Y_1^{*(1)}), \ldots, (X_n^{*(1)}, Y_n^{*(1)}) \\
 & (X_1^{*(2)}, Y_1^{*(2)}), \ldots, (X_n^{*(2)}, Y_n^{*(2)}) \\
 & \vdots \\
 & (X_1^{*(B)}, Y_1^{*(B)}), \ldots, (X_n^{*(B)}, Y_n^{*(B)}).
 \end{align*}
-For each bootstrap sample, say $(X_1^{*(\ell)}, Y_1^{*(\ell)}), \ldots, (X_n^{*(\ell)}, Y_n^{*(\ell)})$, we fit the linear regression, leading to a bootstrap estimate of the fitted coefficients $\hat{\beta}_0^{*(\ell)}, \hat{\beta}_1^{*(\ell)}$. Thus, the $B$ bootstrap samples leads to $B$ sets of fitted coefficients. We then estimate the variance by
+For each bootstrap sample, say $(X_1^{*(\ell)}, Y_1^{*(\ell)}), \ldots, (X_n^{*(\ell)}, Y_n^{*(\ell)})$, we fit the linear regression, leading to a bootstrap estimate of the fitted coefficients $\hat{\beta}_0^{*(\ell)}, \hat{\beta}_1^{*(\ell)}$. Thus, the $B$ bootstrap samples leads to $B$ sets of fitted coefficients. We then estimate the variance and construct our confidence interval by:
 \begin{align*}
-\widehat{\text{Var}}(\hat{\beta}_0) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_0^{*(\ell)} - \bar{\hat{\beta}}_0)^2, & \bar{\hat{\beta}}_0 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_0^{*(\ell)}, \\
-\widehat{\text{Var}}(\hat{\beta}_1) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_1^{*(\ell)} - \bar{\hat{\beta}}_1)^2, & \bar{\hat{\beta}}_1 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_1^{*(\ell)}, \\
+\widehat{\mathrm{Var}}(\hat{\beta}_0) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_0^{*(\ell)} - \bar{\hat{\beta}}_0)^2, &
+C.I.(\hat{\beta}_0) &= \hat{\beta}_0 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\mathrm{Var}}(\hat{\beta}_0)}, &
+\bar{\hat{\beta}}_0 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_0^{*(\ell)},\\
+\widehat{\mathrm{Var}}(\hat{\beta}_1) &= \frac{1}{B} \sum_{\ell=1}^{B} (\hat{\beta}_1^{*(\ell)} - \bar{\hat{\beta}}_1)^2, &
+C.I.(\hat{\beta}_1) &= \hat{\beta}_1 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\mathrm{Var}}(\hat{\beta}_1)}, &
+\bar{\hat{\beta}}_1 &= \frac{1}{B} \sum_{\ell=1}^{B} \hat{\beta}_1^{*(\ell)}.
 \end{align*}
-Thus, we would construct our confidence interval by:
-$$
-\text{C.I.}(\hat{\beta}_0) = \hat{\beta}_0 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\text{Var}}(\hat{\beta}_0)},
-$$
-$$
-\text{C.I.}(\hat{\beta}_1) = \hat{\beta}_1 \pm z_{1-\alpha/2} \cdot \sqrt{\widehat{\text{Var}}(\hat{\beta}_1)}.
-$$
 
 ```{r}
 sampled_residuals <- sample(resid(new_model), replace = TRUE)
@@ -527,10 +546,10 @@ bootstrap_data$charges <- new_response
 model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
 ```
 
-From the Residuals vs. Fitted Values plot below, the points are centered around the line y=0, so mean zero assumption is possible to appear to hold. the variability of residuals is consistent across all fitted values, which indicates that the variance is constant, so the constant variance assumption appears to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the constant spread of residuals, meaning the errors have constant variance. Lastly, the "Cook's distance" plot identifies observations 342, 417, and 554 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
+According to the four plots, Assumption 1 satisfied. Assumption 2 may have some violation but we treat it as satisfied. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
 
-```{r fig.height=2.9, fig.width=10}
-par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 3, 0.5), cex = 1)
+```{r fig.height=2.7, fig.width=10}
+par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
 
 plot_list <- list()
 plot_list[[1]] <- plot(model2, which = 1)
@@ -564,7 +583,7 @@ bootstrap_summary <- summary(bootstrap_coefficients_df)
 print(bootstrap_summary)
 ```
 
-```{r }
+```{r include = FALSE}
 means <- colMeans(bootstrap_coefficients_df)
 standard_deviations <- apply(bootstrap_coefficients_df, 2, sd)
 confidence_level <- 0.95
@@ -606,7 +625,6 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
 p <- p + labs(caption = "Figure 11: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic"))
 ```
 
-
 The result is slightly inconsistent with the linear model using `lm()` directly. This might because the standardized residuals are still not constant across fitted values and therefore might including some violations. Bootstrap methods can overcome this situation by resampling from residuals.
 
 For predictions, we would consider in the test set that we still use the 85% quantile of the empirical residuals from the initial regression model in the training set as the threshold to judge if the given data is outlier or not. That is to say, $\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon_{train}}\}.$
@@ -644,20 +662,25 @@ predict_charges <- function(new_data) {
 }
 ```
 
-```{r fig.height=3, fig.width=8}
+```{r fig.height=3, fig.width=9}
 data_for_plot <- data.frame(
   Actual = data_test$charges,
-  LR_Predicted = predict_charges(data_test)
+  LR_Selected_Predicted = predict_charges(data_test)
 ) %>% 
   pivot_longer(-Actual, names_to = "Model", values_to = "Predicted")
 
 plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
-  labs(title = "Comparison of Model Predictions vs Actual Values in testset",
+  labs(title = "Model Predictions vs Actual Values in Testset",
        x = "Actual Charges",
        y = "Predicted Charges") +
-  theme_minimal()
+  theme_minimal() +
+  theme(,
+    legend.position = c(0.55, 0), # Adjust these values as needed
+    legend.justification = c(0, 0),
+    legend.box.just = "left",
+    legend.background = element_rect(fill = "white")) 
 
 plot <- plot + labs(caption = "Figure 12: Comparison of model predictions with actual values") +
   theme(plot.caption = element_text(face = "italic"))
@@ -668,7 +691,7 @@ The linear regression model appears predict the charges well, as indicated by th
 
 # Conclusion
 
-From the above analysis, for the smokers, the result showed that bmi and age are strong predictor of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges and it performs well for the testing daatset. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, and region are statistically significant predictors, while bmi is not statistically significant predictors. Using the 85% quantile of the empirical residuals in the model, it appears to predict the charges well. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
+From the above analysis, for the smokers, the result showed that bmi and age are strong predictor of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges and it performs well for the testing dataset. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, and region are statistically significant predictors, while bmi is not statistically significant predictors. Using the 85% quantile of the empirical residuals in the model, it appears to predict the charges well. We were unable to predict insurance costs for nonsmoker outliers. We need more information to accomplish this task. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
 
 # Discussion
 
