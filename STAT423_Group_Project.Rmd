@@ -405,20 +405,29 @@ $$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$$
 To visualize these data point, we can draw following graphs:
 
 ```{r}
-ggplot(non_smoker_data, aes(x = age, y = charges)) + 
+p1 <- ggplot(non_smoker_data, aes(x = age, y = charges)) + 
   geom_point() + 
   labs(title = "Original Age vs Charges", x = "Age", y = "Charges") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10)) 
 
-ggplot(data_with_small_residuals, aes(x = age, y = charges)) + 
+p2 <- ggplot(data_with_small_residuals, aes(x = age, y = charges)) + 
   geom_point() + 
   labs(title = "Extracted Age vs Charges", x = "Age", y = "Charges") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10)) 
 
-ggplot(data_outliers, aes(x = age, y = charges)) + 
+p3 <- ggplot(data_outliers, aes(x = age, y = charges)) + 
   geom_point() + 
   labs(title = "Age vs Charges Outliers", x = "Age", y = "Charges") +
-  theme_minimal()
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10)) 
+
+p1 <- p1 + theme(aspect.ratio = 0.8)
+p2 <- p2 + theme(aspect.ratio = 0.8)
+p3 <- p3 + theme(aspect.ratio = 0.8)
+
+ggarrange(p1, p2, p3, nrow = 1)
 ```
 
 Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
