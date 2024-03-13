@@ -83,7 +83,7 @@ In order to address this issue and ensure a more balanced representation of the 
 
 ### Non-Smoker
 
-Since the non-smoker uses the bootstrap method which would be introduced below, it is robotic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
+Since the non-smoker uses the bootstrap method which would be introduced below, it is rubustic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
 
 # Model for the Initial Thought: One Full Regression Model
 ```{r fig.height=3, fig.width=9}
@@ -136,7 +136,7 @@ par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges.
 
-According to the four plots, Assumption 1 is not satisfied, with clear trands in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue.
+According to Figure 2, Assumption 1 is not satisfied, with clear trands in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue.
 
 Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normal distributed.
 
@@ -144,7 +144,8 @@ Since this model does not conform to the assumptions of linear regression, if we
 
 ## Solution - Further Spliting the Dataset into Smokers and Nonsmokers
 
-Based on Figure 3, we can see that charges has many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make more accurate analysis.
+According to Figure 3, we can see that charges has many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make more accurate analysis.
+ 
 ```{r fig.height=3, fig.width=7}
 # Reset the plotting layout to the default
 par(mfrow = c(1, 1))
@@ -331,7 +332,7 @@ summary(fit_choice)
 
 ### Assumption Checks and Multicollinearity Checks
 
-According to the four plots, Assumption 1 is satisfied, though the points are not perfectly scattered. Assumption 2 is roughly satisfied with some exception of the points on the edges. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
+According to Figure 4, Assumption 1 is satisfied, though the points are not perfectly scattered. Assumption 2 is roughly satisfied with some exception of the points on the edges. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
 
 We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
 problem for this model. According to the Variance Inflation Factor (VIF) that we have calculated for the model, we can see that all of the VIF are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
@@ -345,7 +346,7 @@ plot_list[[2]] <- plot(fit_choice, which = 2)
 plot_list[[3]] <- plot(fit_choice, which = 3)
 plot_list[[4]] <- plot(fit_choice, which = 5)
 
-mtext("Figure 5", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+mtext("Figure 4: Assumption Check For Selected Model", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
@@ -395,11 +396,11 @@ plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
     legend.box.just = "left",
     legend.background = element_rect(fill = "white")) # Adjusts y axis text
 
-plot + labs(caption = "Figure 6: Comparison of model predictions with actual values") +
+plot + labs(caption = "Figure 5: Comparison of Model Predictions with Actual Values") +
   theme(plot.caption = element_text(face = "italic"))
 ```
 
-Figure 6 shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
+According to Figure 5, it shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 ## Non-Smoker
 
@@ -434,20 +435,21 @@ plot_list[[2]] <- plot(initial_model, which = 2)
 plot_list[[3]] <- plot(initial_model, which = 3)
 plot_list[[4]] <- plot(initial_model, which = 5)
 
-mtext("Figure ", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+mtext("Figure 6: Assumption Check For Initial Model", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
-When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from the graphs, no assumptions are satisfied. The data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
+When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from Figure 6, no assumptions are satisfied. The data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
 $$\hat\epsilon_i=Y_i-\hat Y_i=Y_i-\hat\beta_0-\hat\beta_1X_i.$$
 If we compare the residuals to $\hat{\epsilon}_i$ in the regression model:
 $$\hat{Y}_i = \beta_0 + \beta_1X_i + \epsilon_i \quad \Longleftrightarrow \quad \epsilon_i = Y_i - \beta_0 - \beta_1X_i.$$
 Essentially, each $e_i$ mimics the role of $\hat{\epsilon}_i$ when the fitted coefficients $\hat{\beta}_0, \hat{\beta}_1$ are close to $\beta_0, \beta_1$. Therefore, we would consider to use $\hat\epsilon_i$ of the linear model to capture the distance of the data point to the assumed model and therefore only keep data that are not outliers. In this case we choose 85% quantile of the empirical residuals that 
 $\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$
 
-The following graph shows the extraction of the data point and the outliers:
+Figure 7 shows the extraction of the data point and the outliers:
 
 ```{r fig.height=3, fig.width=9}
 library(ggpubr)
@@ -479,7 +481,7 @@ p3 <- p3 + theme(aspect.ratio = 0.8)
 plot <- ggarrange(p1, p2, p3, nrow = 1)
 
 # Add a text grob for the caption
-caption <- textGrob(label = "Figure 8", x = 0.5, y = 0.99, just = "center", gp = gpar(fontsize = 10, fontface = 'italic'))
+caption <- textGrob(label = "Figure 7: Original, Extraction of the Data Point, and the Outliers of Age vs Charges", x = 0.5, y = 0.99, just = "center", gp = gpar(fontsize = 10, fontface = 'italic'))
 
 grid.arrange(plot, caption, heights = c(5, 1))
 ```
@@ -501,12 +503,12 @@ plot_list[[2]] <- plot(new_model, which = 2)
 plot_list[[3]] <- plot(new_model, which = 3)
 plot_list[[4]] <- plot(new_model, which = 5)
 
-mtext("Figure 9", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+mtext("Figure 8: Assumption Check For Model without Outliers", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-According to the four plots, Assumption 1 not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
+According to Figure 8, Assumption 1 not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
 
 ## Residual Bootstrap
 
@@ -546,7 +548,7 @@ bootstrap_data$charges <- new_response
 model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
 ```
 
-According to the four plots, Assumption 1 satisfied. Assumption 2 may have some violation but we treat it as satisfied. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
+According to Figure 9, Assumption 1 satisfied. Assumption 2 may have some violation but we treat it as satisfied. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
 
 ```{r fig.height=2.7, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
@@ -557,7 +559,7 @@ plot_list[[2]] <- plot(model2, which = 2)
 plot_list[[3]] <- plot(model2, which = 3)
 plot_list[[4]] <- plot(model2, which = 5)
 
-mtext("Figure 10", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
+mtext("Figure 9: Assumption Check For Model Using Residual Bootstrap", outer = TRUE, side = 1, line = 2, cex = 1, font = 3)
 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
@@ -611,7 +613,7 @@ coefficients_df <- data.frame(
 coefficients_df <- coefficients_df[-1, ]
 ```
 
-Figure 11 shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors  regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi and regionnorthwest has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
+Figure 10 shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors  regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi and regionnorthwest has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
 
 
 ```{r fig.height=3, fig.width=5}
@@ -622,7 +624,7 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
   labs(x = "Term", y = "Estimate", title = "Confidence Intervals for Model Coefficients") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-p <- p + labs(caption = "Figure 11: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic"))
+p <- p + labs(caption = "Figure 10: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic"))
 ```
 
 The result is slightly inconsistent with the linear model using `lm()` directly. This might because the standardized residuals are still not constant across fitted values and therefore might including some violations. Bootstrap methods can overcome this situation by resampling from residuals.
@@ -682,22 +684,22 @@ plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
     legend.box.just = "left",
     legend.background = element_rect(fill = "white")) 
 
-plot <- plot + labs(caption = "Figure 12: Comparison of model predictions with actual values") +
+plot <- plot + labs(caption = "Figure 11: Comparison of Model Predictions with Actual Values") +
   theme(plot.caption = element_text(face = "italic"))
 combined_plot <- grid.arrange(p, plot, ncol = 2)
 ```
 
-The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by red dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
+According to Figure 11, the linear regression model appears to predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by red dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
 
 # Conclusion
 
-From the above analysis, for the smokers, the result showed that bmi and age are strong predictor of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges and it performs well for the testing dataset. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, and region are statistically significant predictors, while bmi is not statistically significant predictors. Using the 85% quantile of the empirical residuals in the model, it appears to predict the charges well. We were unable to predict insurance costs for nonsmoker outliers. We need more information to accomplish this task. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
+From the above analysis, for the smokers, the result showed that bmi and age are strong predictors of smokers' insurance charges. The prediction model shows a linear relationship between the actual and predicted charges and it performs well for the testing dataset. For nonsmokers, our improved method, which included removing outliers and residual scaling, found that age, children, and region are statistically significant predictors, while bmi is not a statistically significant predictor. Using the 85% quantile of the empirical residuals in the model, it appears to predict the charges well. We were unable to predict insurance costs for nonsmoker outliers. We need more information to accomplish this task. These results show that health insurance costs are complicated and that it's important for prediction models to take into account personal traits.
 
 # Discussion
 
 This is truly a hard dataset for linear regression analysis because: 1) most of the explanatory variables in the dataset are categorical or ordinal; 2) The dataset contains a lot of outliers that cannot be separated easily by its existing explanatory variables, suggesting that we might need more information for the person (especially the person's medical history) to do a more accurate prediction. 
 
-Based on what we learned from this research, we should consider more potentional effective factors on health insurance charges, use more advanced predictive modelling methods, and keep improving the models to better reflect how healthcare use and prices change over time. The clear effect that smoking has on insurance rates shows how important it is to have custom models that take living factors into account. As health care needs and insurance policies change, it will be important to use machine learning algorithms and keep models up to date with new data to make predictions more accurate and make sure they stay relevant to current trends.
+Based on what we learned from this research, we should consider more potentially effective factors on health insurance charges, use more advanced predictive modeling methods, and keep improving the models to better reflect how healthcare use and prices change over time. The clear effect that smoking has on insurance rates shows how important it is to have custom models that take living factors into account. As healthcare needs and insurance policies change, it will be important to use machine learning algorithms and keep models up to date with new data to make predictions more accurate and make sure they stay relevant to current trends.
 
 \newpage 
 
