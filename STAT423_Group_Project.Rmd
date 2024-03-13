@@ -57,6 +57,7 @@ data$sex <- as.factor(data$sex)
 data$smoker <- as.factor(data$smoker)
 data$region <- as.factor(data$region)
 ```
+
 To address the issue of having multiple intercepts due to the presence of categorical variables in regression analysis, we change `sex`, `smoker`, and `region` into factors in R. To facilitate the development and evaluation of predictive models, we divided the dataset into 80% training and 20% testing (validation) subsets. 
 
 ```{r data_split_brefore_transformation}
@@ -73,7 +74,7 @@ test_set1 <- df_shuffled[(n_train + 1):n_total, ]
 
 ## Data Processing for the Alternative Solution
 
-We realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we transformed the dataset separately for each smoke status group to ensure our modeling is appropriate for these differences and then produce a reliable analysis. After the box-cox analysis, we chose to do a square root transformation to the charges for smoker dataset and a log transformation to the charges for non-smoker dataset.
+We realize that splitting the dataset based on smoking status may alter the distribution of the response variable: charges. Therefore, we transformed the dataset separately for each smoke status group to ensure our modeling was appropriate for these differences and then produced a reliable analysis. After the box-cox analysis, we chose to do a square root transformation to the charges for the smoker dataset and a log transformation to the charges for the non-smoker dataset.
  
 ### Smoker
 
@@ -83,9 +84,10 @@ In order to address this issue and ensure a more balanced representation of the 
 
 ### Non-Smoker
 
-Since the non-smoker uses the bootstrap method which would be introduced below, it is rubustic and is resistant to the imbalanced data distribution. Therefore we still consider the children number to be numerical.
+Since the non-smoker uses the bootstrap method which will be introduced below, it is robust and is resistant to the imbalanced data distribution. Therefore we still consider the children's number to be numerical.
 
 # Model for the Initial Thought: One Full Regression Model
+
 ```{r fig.height=3, fig.width=9}
 par(mfrow = c(1, 3), oma = c(3, 0, 0, 0))
 hist(train_set1$charges, xlab = "Health Insurance Charges", main = "Histogram for Health Insurance Charges")
@@ -101,11 +103,12 @@ mtext("Figure 1: Log Transformation on Health Insurance Charges", outer = TRUE, 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-Our initial thought for this analysis is to find the best fitted linear regression model for the entire dataset. Before fitting the full regression model, we see the distribution of Health Insurance Charges is very right skewed (Figure 1, first plot). In order to fit the full regression model, we need a Box-Cox transformation. Here, we take $\lambda=0$ and apply a log transformation to the charges (Figure 1, second plot). We can see that the  distribution of Health Insurance Charges after log transformation is normal. 
+
+Our initial thought for this analysis is to find the best-fitted linear regression model for the entire dataset. Before fitting the full regression model, we see the distribution of Health Insurance Charges is very right skewed (Figure 1, first plot). In order to fit the full regression model, we need a Box-Cox transformation. Here, we take $\lambda=0$ and apply a log transformation to the charges (Figure 1, second plot). We can see that the distribution of Health Insurance Charges after log transformation is normal. 
 
 ## Assumption Checks and Multicollinearity Checks
 
-In the following analysis, we will do several Assumption Checks and Multicollinearity Checks. To minimize repetitive analytical writing, we will use the list of conditions under which each assumptions holds and refer to them as Assumption 1, 2, 3, and (not) having serious Multicollinearity issue.
+In the following analysis, we will do several Assumption Checks and Multicollinearity Checks. To minimize repetitive analytical writing, we will use the list of conditions under which each assumption holds and refer to them as Assumptions 1, 2, 3, and (not) having serious Multicollinearity issues.
 
 - Check Assumption 1: linearity ($E[\epsilon_i] = 0$), using Residual vs. Fitted plot. Assumption holds if the points are randomly scattered around the horizontal line at zero.
 
@@ -134,17 +137,18 @@ mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+
 Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges.
 
-According to Figure 2, Assumption 1 is not satisfied, with clear trands in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue.
+According to Figure 2, Assumption 1 is not satisfied, with clear trends in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue.
 
-Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normal distributed.
+Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normally distributed.
 
-Since this model does not conform to the assumptions of linear regression, if we continue to use this model for our analysis, our results will be inaccurate. To ensure the reliability of the models that we made, we need to do a some analysis.
+Since this model does not conform to the assumptions of linear regression, if we continue to use this model for our analysis, our results will be inaccurate. To ensure the reliability of the models that we made, we need to do some analysis.
 
 ## Solution - Further Spliting the Dataset into Smokers and Nonsmokers
 
-According to Figure 3, we can see that charges has many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make more accurate analysis.
+According to Figure 3, we can see that charges have many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make a more accurate analysis.
  
 ```{r fig.height=3, fig.width=7}
 # Reset the plotting layout to the default
@@ -311,17 +315,17 @@ table_data <- data.frame(
 kable(table_data, caption = "Model selection criteria")
 ```
 
-The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being selected. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in Table 1.
+The Mallow’s Cp statistic, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being selected. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in Table 1.
 
 ### Analysis of the selected linear model
 
 For the selected model with predictors bmi, age, and sex:
 
-Here, the intercept is not worthy for explaination because it suggests that when both BMI and age are zero, the square root of charges for female is expected to be approximately 42.8299 and for male is expected to be 41.0109. However, no one will have a bmi or age of zero.
+Here, the intercept is not worthy of explanation because it suggests that when both BMI and age are zero, the square root of charges for females is expected to be approximately 42.8299, and for males is expected to be 41.0109. However, no one will have a BMI or age of zero.
 
-According to the summary, keeping other factors the same, for every one unit increase in bmi, the estimate of the average square root of charges increase 8.1623. For every one increase in age, the estimate of the average square root of charges increase 1.5053. Based on the p-values, the significant predictors are `bmi` and `age`, which implies that the effect of age and bmi on the square root of charges are evident from the data.
+According to the summary, keeping other factors the same, for every one-unit increase in BMI, the estimate of the average square root of charges increases by 8.1623. For every increase in age, the estimate of the average square root of charges increases by 1.5053. Based on the p-values, the significant predictors are `bmi` and `age`, which implies that the effect of age and BMI on the square root of charges is evident from the data.
 
-The coefficient for sexmale is -1.8190, indicating that, keeping other factors the same, being male is associated with a decrease in the square root of charges of -1.8190 compared to being female. However, this effect is not statistically significant, as indicated by the p-value, which suggests that sex may not have a strong influence on the square root of charges within this model.
+The coefficient for `sexmale` is -1.8190, indicating that, keeping other factors the same, being male is associated with a decrease in the square root of charges of -1.8190 compared to being female. However, this effect is not statistically significant, as indicated by the p-value, which suggests that sex may not have a strong influence on the square root of charges within this model.
 
 The F-statistic 220.5 with a significantly small p-value suggests that the overall model is statistically significant. The residual standard error is 33.75. The R-squared value is 0.7573, meaning that the model explains approximately 75.73% of the variability in charges, which is quite high. The adjusted R-squared value is 0.7539, which is also quite high and close to the R-squared value, suggesting that the model is not being overly penalized for having unnecessary predictors.
 
@@ -334,8 +338,7 @@ summary(fit_choice)
 
 According to Figure 4, Assumption 1 is satisfied, though the points are not perfectly scattered. Assumption 2 is roughly satisfied with some exception of the points on the edges. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
 
-We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
-problem for this model. According to the Variance Inflation Factor (VIF) that we have calculated for the model, we can see that all of the VIF are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
+We can see that the standard error for all the parameters in the selected model is smaller. Thus, there should not be a serious multicollinearity problem for this model. According to the Variance Inflation Factor (VIF) that we have calculated for the model, we can see that all of the VIF are smaller than 5 (Table 2), meaning that there isn't serious multicollinearity for our parameters. 
 
 ```{r fig.height=2.7, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
@@ -400,7 +403,7 @@ plot + labs(caption = "Figure 5: Comparison of Model Predictions with Actual Val
   theme(plot.caption = element_text(face = "italic"))
 ```
 
-According to Figure 5, it shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
+Figure 5, shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 ## Non-Smoker
 
@@ -442,7 +445,7 @@ mtext("Figure 6: Assumption Check For Initial Model", outer = TRUE, side = 1, li
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
-When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from Figure 6, no assumptions are satisfied. The data of non-smoker is showing a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lies above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider to extract this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
+When checking the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region`, as we can see from Figure 6, no assumptions are satisfied. The data of non-smokers shows a clear pattern of residuals that is dense on the bottom of the residual plots and also some outliers that lie above it. These outliers cannot be distinguished by any of the variables in our database. We believe that the cause of the presence of these outliers may be related to the presence of some disease for those persons, but this part of the information is missing in our dataset. Therefore, we would consider extracting this pattern out of the data and consider those floating data to be outliers in order to make a linear regression model. Consider the residuals that
 $$\hat\epsilon_i=Y_i-\hat Y_i=Y_i-\hat\beta_0-\hat\beta_1X_i.$$
 If we compare the residuals to $\hat{\epsilon}_i$ in the regression model:
 $$\hat{Y}_i = \beta_0 + \beta_1X_i + \epsilon_i \quad \Longleftrightarrow \quad \epsilon_i = Y_i - \beta_0 - \beta_1X_i.$$
@@ -486,13 +489,14 @@ caption <- textGrob(label = "Figure 7: Original, Extraction of the Data Point, a
 grid.arrange(plot, caption, heights = c(5, 1))
 ```
 
-Taking the 85% quantile as a threshold cannot yields those exact outliers in the dataset, but that's what we want because we're not aiming to fit a perfect model in the training dataset, but in the unseen testing dataset. Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
+Taking the 85% quantile as a threshold cannot yield those exact outliers in the dataset, but that's what we want because we're not aiming to fit a perfect model in the training dataset but in the unseen testing dataset. Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
 
 ```{r}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
 summary(new_model)
 ```
-We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. The R-squared value is 0.9793 and the adjusted R-squared value is 0.9791, which are quite high.
+
+We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. The R-squared value is 0.9793 and the adjusted R-squared value is 0.9791, which is quite high.
 
 ```{r fig.height=2.7, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
@@ -508,7 +512,8 @@ mtext("Figure 8: Assumption Check For Model without Outliers", outer = TRUE, sid
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-According to Figure 8, Assumption 1 not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
+
+According to Figure 8, Assumption 1 is not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
 
 ## Residual Bootstrap
 
@@ -613,8 +618,7 @@ coefficients_df <- data.frame(
 coefficients_df <- coefficients_df[-1, ]
 ```
 
-Figure 10 shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors  regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi and regionnorthwest has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
-
+Figure 10 shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors of age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors `regionsoutheast` and `regionsouthwest` have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of `bmi` and `regionnorthwest` has a small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent with the result from the previous `lm()` table.
 
 ```{r fig.height=3, fig.width=5}
 p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
@@ -627,9 +631,9 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
 p <- p + labs(caption = "Figure 10: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic"))
 ```
 
-The result is slightly inconsistent with the linear model using `lm()` directly. This might because the standardized residuals are still not constant across fitted values and therefore might including some violations. Bootstrap methods can overcome this situation by resampling from residuals.
+The result is slightly inconsistent with the linear model using `lm()` directly. This might be because the standardized residuals are still not constant across fitted values and therefore might include some violations. Bootstrap methods can overcome this situation by resampling from residuals.
 
-For predictions, we would consider in the test set that we still use the 85% quantile of the empirical residuals from the initial regression model in the training set as the threshold to judge if the given data is outlier or not. That is to say, $\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon_{train}}\}.$
+For predictions, we would consider in the test set that we still use the 85% quantile of the empirical residuals from the initial regression model in the training set as the threshold to judge if the given data is an outlier or not. That is to say, $\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon_{train}}\}.$
 
 ```{r}
 # non_smoker_data <- filter(data, smoker == "no")
@@ -712,5 +716,4 @@ Based on what we learned from this research, we should consider more potentially
 - Health Insurance dataset. (2020, December 18). [https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data](https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data)
 
 - ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. *PR Newswire: press release distribution, targeting, monitoring and marketing*. [https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html](https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html)
-
 
