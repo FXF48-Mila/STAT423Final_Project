@@ -92,7 +92,7 @@ mtext("Figure 1: Log Transformation on Health Insurance Charges", outer = TRUE, 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-Our initial thought for this analysis is to find the best fitted linear regression model for the entire dataset. Before fitting the full regression model, we see the distribution of Health Insurance Charges is very right skewed (figure 1, first plot). In order to fit the full regression model, we need a Box-Cox transformation. Here, we take $\lambda=0$ and apply a log transformation to the charges (figure 1, second plot). We can see that the  distribution of Health Insurance Charges after log transformation is normal. 
+Our initial thought for this analysis is to find the best fitted linear regression model for the entire dataset. Before fitting the full regression model, we see the distribution of Health Insurance Charges is very right skewed (Figure 1, first plot). In order to fit the full regression model, we need a Box-Cox transformation. Here, we take $\lambda=0$ and apply a log transformation to the charges (Figure 1, second plot). We can see that the  distribution of Health Insurance Charges after log transformation is normal. 
 
 
 ### Fit Full Models and Assumption Checks
@@ -103,7 +103,7 @@ fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data 
 ```
 
 
-```{r fig.height=4, fig.width=4.5}
+```{r fig.height=4, fig.width=5.2}
 # Set up the layout for the base R plots
 par(mfrow = c(2, 2))
 
@@ -126,6 +126,8 @@ Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker 
 In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
 
 Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
+
+We can clearly see that there exist two regression lines in Figure 3 for `age` and `charges`.
 
 ```{r fig.height=3, fig.width=9}
 # Reset the plotting layout to the default
@@ -156,8 +158,6 @@ plot_with_caption
 ```{r, include = FALSE}
 plot(train_set1)
 ```
-
-We can clearly see that there exist two regression lines in diagnostic plots for `age` and `charges`.
 
 ## Alternative Thought: Split The Dataset Based on Smoke Status
 
@@ -219,18 +219,17 @@ test_smoker$charges <- (test_smoker$charges^lambda_optimal - 1) / lambda_optimal
 
 hist(datasmoker$charges, xlab = "Health Insurance Charges", main = "Histogram for Log Health Insurance Charges")
 
-mtext("Figure 3: Boxcox Transformation on Health Insurance Charges", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+mtext("Figure 4: Boxcox Transformation on Health Insurance Charges", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
 
 par(mfrow = c(1, 1), oma = c(0, 0, 0,0))
 
 ```
+
 # Method
 
 ## Smoker
 
 ### Model Selection
-
-The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being included. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in the following table.
 
 ```{r, include = FALSE}
 criteria_statistics <- function(mdl.list) {
@@ -296,10 +295,19 @@ print(best_model_BIC$model)
 print(best_model_BIC$value)
 ```
 
-| Mallow's Cp| AIC | BIC |
-|----------|----------|----------|
-| 1161.372  | 2139.16 | 2156.036  |
 
+```{r}
+library(knitr)
+
+table_data <- data.frame(
+  "Mallow's Cp" = 1161.372,
+  AIC = 2139.16,
+  BIC = 2156.036
+)
+kable(table_data, caption = "Model selection criteria")
+```
+
+The Mallow’s Cp statistic, Akaike Information Criterion (AIC) and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being included. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in Table 1.
 
 ### Analysis of the selected linear model
 
@@ -326,12 +334,19 @@ The residual vs. fitted plots imply the expected value of residuals is roughly 0
 We can see that the standard error for all the parameters in the selected model are smaller. Thus, there should not be serious multicollinearity
 problem for this model. According to the vif that we have calculated for the model, we can see that all of the vif are smaller than 5, meaning that there isn't serious multicollinearity for our parameters. 
 
-```{r}
+```{r fig.height=4, fig.width=5.2}
 par(mfrow=c(2, 2))
-plot(fit_choice,which=1)
-plot(fit_choice,which=2)
-plot(fit_choice,which=3)
-plot(fit_choice,which=5)
+
+plot_list <- list()
+plot_list[[1]] <- plot(fit_choice, which = 1)
+plot_list[[2]] <- plot(fit_choice, which = 2)
+plot_list[[3]] <- plot(fit_choice, which = 3)
+plot_list[[4]] <- plot(fit_choice, which = 5)
+
+mtext("Figure 5", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+
+# Reset to default parameters
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
 ```{r}
@@ -341,7 +356,9 @@ vif(fit_choice)
 
 ### Prediction
 
-```{r}
+Figure 6 shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
+
+```{r fig.height=3, fig.width=5.4}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
 data_for_plot <- data.frame(
   Actual = test_smoker$charges,
@@ -350,23 +367,20 @@ data_for_plot <- data.frame(
   pivot_longer(-Actual, names_to = "Model", values_to = "Predicted")
 
 # Visualizing the results
-ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
+plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
   labs(title = "Comparison of Model Predictions vs Actual Values in testset",
        x = "Actual Charges",
        y = "Predicted Charges") +
   theme_minimal()
+
+plot + labs(caption = "Figure 6: Comparison of model predictions with actual values") +
+  theme(plot.caption = element_text(face = "italic"))
+
 ```
 
-
-The plot shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonablely well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
-
-
-
-
 ## Non-Smoker
-
 
 ```{r}
 # data <- read.csv("Health_insurance.csv")
@@ -388,7 +402,7 @@ data_with_small_residuals <- non_smoker_data[abs(residuals) <= threshold, ]
 data_outliers <- non_smoker_data[abs(residuals) > threshold, ]
 ```
 
-```{r}
+```{r fig.height=4, fig.width=5.2}
 par(mfrow=c(2, 2))
 plot(initial_model,which=1)
 plot(initial_model,which=2)
@@ -405,6 +419,10 @@ $$\hat Y=\{\hat Y_i:\hat\epsilon_i<Q_{0.85\hat\epsilon}\}.$$
 To visualize these data point, we can draw following graphs:
 
 ```{r}
+library(ggpubr)
+library(gridExtra)
+library(grid)
+
 p1 <- ggplot(non_smoker_data, aes(x = age, y = charges)) + 
   geom_point() + 
   labs(title = "Original Age vs Charges", x = "Age", y = "Charges") +
@@ -427,7 +445,12 @@ p1 <- p1 + theme(aspect.ratio = 0.8)
 p2 <- p2 + theme(aspect.ratio = 0.8)
 p3 <- p3 + theme(aspect.ratio = 0.8)
 
-ggarrange(p1, p2, p3, nrow = 1)
+plot <- ggarrange(p1, p2, p3, nrow = 1)
+
+# Add a text grob for the caption
+caption <- textGrob(label = "Figure 8", x = 0.5, y = 0.99, just = "center", gp = gpar(fontsize = 9, fontface = 'italic'))
+
+grid.arrange(plot, caption)
 ```
 
 Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
@@ -438,16 +461,18 @@ summary(new_model)
 ```
 As we can see from the table given from `lm()` function, all the factors except BMI are significant. 
 
-```{r}
+```{r fig.height=4, fig.width=5.2}
 par(mfrow=c(2, 2))
 plot(new_model,which=1)
 plot(new_model,which=2)
 plot(new_model,which=3)
 plot(new_model,which=4)
+# Figure 9
 ```
+
 From the Residuals vs. Fitted Values plot, the points are approximately centered around the line y=0, so mean zero assumption is possible to appear to hold. The variability of the points on below the line y=0 is larger than that of the points above the line y=0 on both tails, which indicates that the variance is not constant, so the constant variance assumption does not appear to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the spread of residuals, meaning the errors have non-constant variance. Lastly, the "Cook's distance" plot identifies observations 609, 285, and 713 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
 
-To improve our model performance and better satisfy our model assumption, we would consider to use residual bootstrap[@Chen2017].
+To improve our model performance and better satisfy our model assumption, we would consider to use residual bootstrap \footnote{(@Chen2017)}.
 
 The residual bootstrap first generates IID
 $$
@@ -502,15 +527,17 @@ bootstrap_data$charges <- new_response
 model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
 ```
 
-```{r}
+From the Residuals vs. Fitted Values plot below, the points are centered around the line y=0, so mean zero assumption is possible to appear to hold. the variability of residuals is consistent across all fitted values, which indicates that the variance is constant, so the constant variance assumption appears to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the constant spread of residuals, meaning the errors have constant variance. Lastly, the "Cook's distance" plot identifies observations 342, 417, and 554 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
+
+```{r fig.height=4, fig.width=5.2}
 par(mfrow=c(2, 2))
 plot(model2,which=1)
 plot(model2,which=2)
 plot(model2,which=3)
 plot(model2,which=4)
+# Figure 10
 ```
 
-From the Residuals vs. Fitted Values plot, the points are centered around the line y=0, so mean zero assumption is possible to appear to hold. the variability of residuals is consistent across all fitted values, which indicates that the variance is constant, so the constant variance assumption appears to hold. From the Normal QQ plot, the residuals are slightly deviate from the straight line in the tails, so the normality is possible to be hold. The "Scale-Location" plot shows the constant spread of residuals, meaning the errors have constant variance. Lastly, the "Cook's distance" plot identifies observations 342, 417, and 554 as potential influential points due to their relatively high Cook's distance values, which could disproportionately affect the model's coefficients.
 
 ```{r}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = datanosmoker)
@@ -532,7 +559,7 @@ bootstrap_summary <- summary(bootstrap_coefficients_df)
 print(bootstrap_summary)
 ```
 
-```{r}
+```{r }
 means <- colMeans(bootstrap_coefficients_df)
 standard_deviations <- apply(bootstrap_coefficients_df, 2, sd)
 confidence_level <- 0.95
@@ -558,7 +585,12 @@ coefficients_df <- data.frame(
 )
 
 coefficients_df <- coefficients_df[-1, ]
+```
 
+Figure 11 shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors  regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi and regionnorthwest has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
+
+
+```{r fig.height=3, fig.width=5}
 p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
   geom_point() +
   geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), width = 0.2) +
@@ -566,10 +598,10 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
   labs(x = "Term", y = "Estimate", title = "Confidence Intervals for Model Coefficients") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-print(p)
+p + labs(caption = "Figure 11: Confidence Intervals for Model Coefficients") +
+  theme(plot.caption = element_text(face = "italic"))
 ```
 
-The plot shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors  regionsoutheast and regionsouthwest have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of bmi and regionnorthwest has small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent to the result from previous `lm()` table.
 
 The result is slightly inconsistent with the linear model using `lm()` directly. This might because the standardized residuals are still not constant across fitted values and therefore might including some violations. Bootstrap methods can overcome this situation by resampling from residuals.
 
@@ -609,22 +641,24 @@ predict_charges <- function(new_data) {
 }
 ```
 
-```{r}
+```{r fig.height=3, fig.width=5}
 data_for_plot <- data.frame(
   Actual = data_test$charges,
   LR_Predicted = predict_charges(data_test)
 ) %>% 
   pivot_longer(-Actual, names_to = "Model", values_to = "Predicted")
 
-ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
+plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +
   labs(title = "Comparison of Model Predictions vs Actual Values in testset",
        x = "Actual Charges",
        y = "Predicted Charges") +
   theme_minimal()
-```
 
+plot + labs(caption = "Figure 12: Comparison of model predictions with actual values") +
+  theme(plot.caption = element_text(face = "italic"))
+```
 
 The linear regression model appears predict the charges well, as indicated by the close clustering of the data points around the line of perfect prediction, where the actual value is equal to the predicted value. The data points are represented by red dots, where the x-axis shows the actual charges and the y-axis shows the charges predicted by the model. Overall, the prediction aligns well with the expected outcomes, with no apparent outlier present.
 
