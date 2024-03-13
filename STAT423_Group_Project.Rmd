@@ -27,6 +27,7 @@ library(dplyr)
 library(ggplot2)
 library(patchwork)
 library(ggpubr)
+library(cowplot)
 ```
 
 # Introduction
@@ -96,15 +97,13 @@ Our initial thought for this analysis is to find the best fitted linear regressi
 
 ### Fit Full Models and Assumption Checks
 
-Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges. We need to check the assumption for our initial model first.
-
 ```{r}
 fit.full <- lm(log_charges ~ age + sex + bmi + children + smoker + region, data = train_set1)
 #summary(fit.full)
 ```
 
 
-```{r}
+```{r fig.height=4, fig.width=4.5}
 # Set up the layout for the base R plots
 par(mfrow = c(2, 2))
 
@@ -115,6 +114,20 @@ plot_list[[2]] <- plot(fit.full, which = 2)
 plot_list[[3]] <- plot(fit.full, which = 3)
 plot_list[[4]] <- plot(fit.full, which = 5)
 
+mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line = 2, cex = 0.8, font = 3)
+
+# Reset to default parameters
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
+```
+
+
+Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges. We need to check the assumption for our initial model first.
+
+In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
+
+Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
+
+```{r fig.height=3, fig.width=9}
 # Reset the plotting layout to the default
 par(mfrow = c(1, 1))
 
@@ -128,19 +141,23 @@ p2 <- ggplot(data = train_set1, aes(x = bmi, y = charges, color = smoker)) +
   labs(title = "Scatterplot of charges vs. bmi", x = "bmi", y = "charges")
 
 # Arrange ggplot2 plots using ggarrange
-ggarrange(p1, p2, ncol = 2)
+plots <- ggarrange(p1, p2, ncol = 2)
+
+caption <- ggdraw() +
+  draw_label("Figure 3: Scatter Plot of Age VS Charges and BMI VS Charges", fontface = 'italic', size = 10, color = "black")
+
+# Combine the plots and caption
+plot_with_caption <- plot_grid(plots, caption, nrow = 2, rel_heights = c(0.9, 0.1))
+
+# Display the combined plot with caption
+plot_with_caption
 ```
-
-
-In the TA plot, the points are not randomly around the horizontal line at zero. And there exists an increasing and decreasing trend at the beginning and the ending respectively, which suggests that the linearity assumption is violated. In the Scale-Location plot, the spread of points is not constant across all values of the fitted values, which indicates that the assumption of homoscedasticity is violated. In the residuals plot, the last part of the quantile deviates a lot, indicating the residuals are not normally distributed, violating the assumption of normality. In the Residuals vs. Leverage plot, there exist three points that have high leverage values (typically exceeding twice the average leverage). These three points are considered influential and may lead to some misunderstanding in the following investigation.
-
-Therefore, we can see that almost every assumption is violated in this case even though the explanatory variables are normal distributed.
 
 ```{r, include = FALSE}
 plot(train_set1)
 ```
 
-We can clearly see that there exist two regression lines in diagnostic plots for `age` and `log_charges`.
+We can clearly see that there exist two regression lines in diagnostic plots for `age` and `charges`.
 
 ## Alternative Thought: Split The Dataset Based on Smoke Status
 
