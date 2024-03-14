@@ -299,6 +299,7 @@ print("Best Model based on BIC:")
 print(best_model_BIC$model)
 print(best_model_BIC$value)
 ```
+
 ```{r}
 library(knitr)
 
@@ -360,7 +361,8 @@ mtext("Figure 4: Assumption Check For Selected Model", outer = TRUE, side = 1, l
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-```{r fig.height=3, fig.width=3, include = FALSE}
+
+```{r fig.height=3, fig.width=3}
 library(knitr)
 
 table_data <- data.frame(
@@ -371,6 +373,7 @@ table_data <- data.frame(
 kable(table_data, 
       caption = "VIF for Multicollinearity Analysis")
 ```
+
 ```{r, include = FALSE}
 print("Variance Inflation Factor for Multicollinearity Analysis:")
 vif(fit_choice)
@@ -512,11 +515,11 @@ summary(new_model)
 \
 \
 \
-\
 
 Taking the 85% quantile as a threshold cannot yield those exact outliers in the dataset, but that's what we want because we're not aiming to fit a perfect model in the training dataset but in the unseen testing dataset. Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model is presented in the previous page.
 
 We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. The R-squared value is 0.9793 and the adjusted R-squared value is 0.9791, which is quite high.
+
 
 ```{r fig.height=2.7, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
@@ -534,6 +537,7 @@ par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
 
 According to Figure 8, Assumption 1 is not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
+
 
 ### Residual Bootstrap
 
@@ -573,8 +577,6 @@ bootstrap_data$charges <- new_response
 model2<-lm(charges ~ age+sex+bmi+children+region, data = bootstrap_data)
 ```
 
-According to Figure 9, Assumption 1 satisfied. Assumption 2 may have some violation but we treat it as satisfied. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
-
 ```{r fig.height=2.7, fig.width=10}
 par(mfrow=c(1, 4), oma = c(3, 0, 0, 0), mar = c(0, 4, 2, 0.5), cex = 1)
 
@@ -589,6 +591,8 @@ mtext("Figure 9: Assumption Check For Model Using Residual Bootstrap", outer = T
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+
+According to Figure 9, Assumption 1 satisfied. Assumption 2 may have some violation but we treat it as satisfied. Assumption 3 is satisfied and there is no serious Multicollinearity issue.
 
 ```{r, include = FALSE}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = datanosmoker)
