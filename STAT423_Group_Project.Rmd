@@ -88,7 +88,7 @@ Since the non-smoker uses the bootstrap method which will be introduced below, i
 
 # Model for the Initial Thought: One Full Regression Model
 
-```{r fig.height=3, fig.width=9}
+```{r fig.height=2.8, fig.width=10}
 par(mfrow = c(1, 3), oma = c(3, 0, 0, 0))
 hist(train_set1$charges, xlab = "Health Insurance Charges", main = "Histogram for Health Insurance Charges")
 
@@ -137,12 +137,9 @@ mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+Here, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges.
 
-Then, we fit a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges.
-
-According to Figure 2, Assumption 1 is not satisfied, with clear trends in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue.
-
-Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normally distributed.
+According to Figure 2, Assumption 1 is not satisfied, with clear trends in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue. Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normally distributed.
 
 Since this model does not conform to the assumptions of linear regression, if we continue to use this model for our analysis, our results will be inaccurate. To ensure the reliability of the models that we made, we need to do some analysis.
 
@@ -302,8 +299,6 @@ print("Best Model based on BIC:")
 print(best_model_BIC$model)
 print(best_model_BIC$value)
 ```
-
-
 ```{r}
 library(knitr)
 
@@ -312,14 +307,13 @@ table_data <- data.frame(
   AIC = 2139.16,
   BIC = 2156.036
 )
-kable(table_data, caption = "Model selection criteria")
+kable(table_data, caption = "Model Selection Criteria")
 ```
-
 The Mallow’s Cp statistic, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC) are used for the appropriate model selection. While Mallow’s Cp assesses the trade-off between model fit and complexity in linear regression, AIC and BIC extend to various modeling contexts, penalizing complexity differently based on information theory and sample size, respectively. Here, we have chosen to use these three model selection criteria for all the possible models (including the interactions of all variables) that we can build from the dataset. The surprising result is that all the optimal model selection criteria ultimately point to the same model with parameters `bmi`, `age`, and `sex` with no interaction term being selected. The corresponding Mallow's Cp statistic, AIC, and BIC for this selected model are displayed in Table 1.
 
-### Analysis of the selected linear model
+### Analysis of the Selected Linear Model
 
-For the selected model with predictors bmi, age, and sex:
+For the selected model with predictors `bmi`, `age`, and `sex`:
 
 Here, the intercept is not worthy of explanation because it suggests that when both BMI and age are zero, the square root of charges for females is expected to be approximately 42.8299, and for males is expected to be 41.0109. However, no one will have a BMI or age of zero.
 
@@ -329,10 +323,22 @@ The coefficient for `sexmale` is -1.8190, indicating that, keeping other factors
 
 The F-statistic 220.5 with a significantly small p-value suggests that the overall model is statistically significant. The residual standard error is 33.75. The R-squared value is 0.7573, meaning that the model explains approximately 75.73% of the variability in charges, which is quite high. The adjusted R-squared value is 0.7539, which is also quite high and close to the R-squared value, suggesting that the model is not being overly penalized for having unnecessary predictors.
 
-```{r}
+```{r, include = FALSE}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = datasmoker)
 summary(fit_choice)
 ```
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
 ### Assumption Checks and Multicollinearity Checks
 
@@ -354,7 +360,7 @@ mtext("Figure 4: Assumption Check For Selected Model", outer = TRUE, side = 1, l
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
-```{r fig.height=3, fig.width=3}
+```{r fig.height=3, fig.width=3, include = FALSE}
 library(knitr)
 
 table_data <- data.frame(
@@ -370,9 +376,9 @@ print("Variance Inflation Factor for Multicollinearity Analysis:")
 vif(fit_choice)
 ```
 
-### Prediction
+### Prediction Results
 
-```{r fig.height=2.7, fig.width=4}
+```{r fig.height=2.4, fig.width=4}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
 data_for_plot <- data.frame(
   Actual = test_smoker$charges,
@@ -400,7 +406,7 @@ plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
     legend.background = element_rect(fill = "white")) # Adjusts y axis text
 
 plot + labs(caption = "Figure 5: Comparison of Model Predictions with Actual Values") +
-  theme(plot.caption = element_text(face = "italic"))
+  theme(plot.caption = element_text(face = "italic", hjust = 0.5))
 ```
 
 Figure 5, shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
@@ -488,13 +494,26 @@ caption <- textGrob(label = "Figure 7: Original, Extraction of the Data Point, a
 
 grid.arrange(plot, caption, heights = c(5, 1))
 ```
-
-Taking the 85% quantile as a threshold cannot yield those exact outliers in the dataset, but that's what we want because we're not aiming to fit a perfect model in the training dataset but in the unseen testing dataset. Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model would be:
-
-```{r}
+```{r, include = FALSE}
 new_model <- lm(charges ~ age + sex + bmi + children + region, data = data_with_small_residuals)
 summary(new_model)
 ```
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+Taking the 85% quantile as a threshold cannot yield those exact outliers in the dataset, but that's what we want because we're not aiming to fit a perfect model in the training dataset but in the unseen testing dataset. Therefore, we would consider that we have successfully deleted the outliers that are irrelevant to our model. The linear regression model is presented in the previous page.
 
 We then check the assumptions by fitting the model `log_charges ~ age + sex + bmi + children + region` again. As we see from the table, all the factors except BMI are significant. The R-squared value is 0.9793 and the adjusted R-squared value is 0.9791, which is quite high.
 
@@ -515,7 +534,7 @@ par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 
 According to Figure 8, Assumption 1 is not satisfied with a trend. Assumption 2 is roughly satisfied. Assumption 3 is not satisfied with points with non-constant variance and there is no serious Multicollinearity issue.
 
-## Residual Bootstrap
+### Residual Bootstrap
 
 To improve our model performance and better satisfy our model assumption, we would consider to use residual bootstrap \footnote{(@Chen2017)}.
 
@@ -617,6 +636,7 @@ coefficients_df <- data.frame(
 
 coefficients_df <- coefficients_df[-1, ]
 ```
+### Prediction Results 
 
 Figure 10 shows confidence intervals for model coefficients from a regression analysis for non-smoker data by using the bootstrap method. In the model, the predictors of age and children have positive coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. While predictors `regionsoutheast` and `regionsouthwest` have negative coefficients and their confidence intervals do not include zero, suggesting they are statistically significant predictors in the model. The coefficient of `bmi` and `regionnorthwest` has a small confidence interval and it contains 0, which indicates it is not a significant predictor in the model. The result is consistent with the result from the previous `lm()` table.
 
@@ -628,7 +648,7 @@ p <- ggplot(coefficients_df, aes(x = term, y = estimate)) +
   labs(x = "Term", y = "Estimate", title = "Confidence Intervals for Model Coefficients") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-p <- p + labs(caption = "Figure 10: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic"))
+p <- p + labs(caption = "Figure 10: Confidence Intervals for Model Coefficients") +   theme(plot.caption = element_text(face = "italic", hjust = 0.5))
 ```
 
 The result is slightly inconsistent with the linear model using `lm()` directly. This might be because the standardized residuals are still not constant across fitted values and therefore might include some violations. Bootstrap methods can overcome this situation by resampling from residuals.
@@ -689,7 +709,7 @@ plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
     legend.background = element_rect(fill = "white")) 
 
 plot <- plot + labs(caption = "Figure 11: Comparison of Model Predictions with Actual Values") +
-  theme(plot.caption = element_text(face = "italic"))
+  theme(plot.caption = element_text(face = "italic", hjust = 0.5))
 combined_plot <- grid.arrange(p, plot, ncol = 2)
 ```
 
@@ -716,4 +736,6 @@ Based on what we learned from this research, we should consider more potentially
 - Health Insurance dataset. (2020, December 18). [https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data](https://www.kaggle.com/datasets/shivadumnawar/health-insurance-dataset/data)
 
 - ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. *PR Newswire: press release distribution, targeting, monitoring and marketing*. [https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html](https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html)
+
+# Work Assignment
 
