@@ -737,5 +737,13 @@ Based on what we learned from this research, we should consider more potentially
 
 - ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. *PR Newswire: press release distribution, targeting, monitoring and marketing*. [https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html](https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html)
 
+
 # Work Assignment
+
+## First Author
+
+- Section 1, 2, 3: Yanting Hu
+- Section 4.1: Liuyixin Shao and Yi Su
+- Section 4.2: Dongfeng Li and Shuxin Zhang 
+- Section 5, 6: All
 
