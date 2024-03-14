@@ -108,7 +108,7 @@ Our initial thought for this analysis was to find the best-fitted linear regress
 
 ## Assumption Checks and Multicollinearity Checks
 
-In the following analysis, we performed Assumption Checks and Multicollinearity Checks several times. To minimize repetitive analytical writing, we used the list of conditions under which each assumption holds and referred to them as Assumption 1, 2, 3, and (not) having serious Multicollinearity issues.
+In the following analysis, we performed Assumption Checks and Multicollinearity Checks several times. To streamline our analysis, we used the list of conditions under which each assumption holds and referred to them as Assumption 1, 2, 3, and (not) having serious Multicollinearity issues.
 
 - Check Assumption 1: linearity ($E[\epsilon_i] = 0$), using Residual vs. Fitted plot. Assumption holds if the points are randomly scattered around the horizontal line at zero.
 
@@ -137,6 +137,7 @@ mtext("Figure 2: Assumption Check For Full Model", outer = TRUE, side = 1, line 
 # Reset to default parameters
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
+
 Here, we fitted a full model as `log_charges ~ age + sex + bmi + children + smoker + region` to see how personal information is related to the charges.
 
 According to Figure 2, Assumption 1 is not satisfied, with clear trends in points. Assumption 2 is not satisfied as the last part of the quantile deviates a lot. Assumption 3 is not satisfied and there is no serious Multicollinearity issue. Therefore, we see that all of the assumptions are violated even though all the explanatory variables are normally distributed.
@@ -145,7 +146,7 @@ Since this model does not conform to the assumptions of linear regression, if we
 
 ## Solution - Further Spliting the Dataset into Smokers and Nonsmokers
 
-```{r fig.height=2.9, fig.width=7}
+```{r fig.height=2.8, fig.width=7}
 # Reset the plotting layout to the default
 par(mfrow = c(1, 1))
 
@@ -172,6 +173,7 @@ plot_with_caption
 ```
 
 According to Figure 3, we can see that charges have many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make a more accurate analysis.
+
 
 ```{r, include = FALSE}
 plot(train_set1)
