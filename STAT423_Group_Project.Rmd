@@ -145,9 +145,7 @@ Since this model does not conform to the assumptions of linear regression, if we
 
 ## Solution - Further Spliting the Dataset into Smokers and Nonsmokers
 
-According to Figure 3, we can see that charges have many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make a more accurate analysis.
- 
-```{r fig.height=3, fig.width=7}
+```{r fig.height=2.9, fig.width=7}
 # Reset the plotting layout to the default
 par(mfrow = c(1, 1))
 
@@ -172,6 +170,8 @@ plot_with_caption <- plot_grid(plots, caption, nrow = 2, rel_heights = c(0.9, 0.
 # Display the combined plot with caption
 plot_with_caption
 ```
+
+According to Figure 3, we can see that charges have many outliers. we tried to separate these outliers, but there is no variable that separates outliers completely. There are far more factors that affect the cost of health insurance than the number of variables we have. We noticed that smoking status could have a significant impact on the cost of insurance since smoking can cause many diseases and those diseases can cause the rise of the health insurance charges. Plus, this is the only variable that could separate some of the outliers. Therefore, we decided to divide the dataset into two groups, smokers and nonsmokers, to make a more accurate analysis.
 
 ```{r, include = FALSE}
 plot(train_set1)
@@ -378,6 +378,9 @@ vif(fit_choice)
 
 ### Prediction Results
 
+Figure 5, shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
+
+
 ```{r fig.height=2.4, fig.width=4}
 fit_choice <- lm(formula = charges ~ bmi + age + sex, data = test_smoker)
 data_for_plot <- data.frame(
@@ -408,8 +411,6 @@ plot <- ggplot(data_for_plot, aes(x = Actual, y = Predicted, color = Model)) +
 plot + labs(caption = "Figure 5: Comparison of Model Predictions with Actual Values") +
   theme(plot.caption = element_text(face = "italic", hjust = 0.5))
 ```
-
-Figure 5, shows the relationship between the actual charge and the charge predicted by the selected linear regression model, represented by the red dots. The data points are distributed around the dashed line, which represents the perfect prediction line, where the actual value is equal to the predicted value. The linear regression model seems to perform reasonably well, as many of the points are clustered around the perfect fit line. However, there are some deviations from this line, indicating some degree of prediction error. Overall, the model generally performs well despite some discrepancies between predicted and actual charges.
 
 ## Non-Smoker
 
@@ -725,8 +726,6 @@ This is truly a hard dataset for linear regression analysis because: 1) most of 
 
 Based on what we learned from this research, we should consider more potentially effective factors on health insurance charges, use more advanced predictive modeling methods, and keep improving the models to better reflect how healthcare use and prices change over time. The clear effect that smoking has on insurance rates shows how important it is to have custom models that take living factors into account. As healthcare needs and insurance policies change, it will be important to use machine learning algorithms and keep models up to date with new data to make predictions more accurate and make sure they stay relevant to current trends.
 
-\newpage 
-
 # References
 
 - Bhatia, K., Gill, S. S., Kamboj, N., Kumar, M., & Bhatia, R. K. (2022). Health Insurance Cost Prediction using Machine Learning. In *2022 3rd International Conference for Emerging Technology (INCET)* (pp. 1-5). Belgaum, India. doi: [10.1109/INCET54531.2022.9824201](https://doi.org/10.1109/INCET54531.2022.9824201)
@@ -737,7 +736,6 @@ Based on what we learned from this research, we should consider more potentially
 
 - ValuePenguin. (2023, December 19). Private health insurance premiums reach a record high of $7008/year in 2024. *PR Newswire: press release distribution, targeting, monitoring and marketing*. [https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html](https://www.prnewswire.com/news-releases/private-health-insurance-premiums-reach-a-record-high-of-7008year-in-2024-302019327.html)
 
-
 # Work Assignment
 
 ## First Author
@@ -747,3 +745,4 @@ Based on what we learned from this research, we should consider more potentially
 - Section 4.2: Dongfeng Li and Shuxin Zhang 
 - Section 5, 6: All
 
+We worked together to review and organize the final report, streamlining it from 28 pages in the original draft to 10 pages. Everyone's contribution to the project was the same.
